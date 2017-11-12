@@ -16,6 +16,13 @@ public class Sphere implements Shape3D{
         return a*a;
     }
 
+    public Sphere(Point3D center, double radius) {
+        this.center = center;
+        this.radius = radius;
+    }
+
+    public Sphere() {}
+
     /**
      * Finds where the provided ray hits this sphere. If it does not hit the sphere, null is returned
      */
@@ -223,6 +230,6 @@ public class Sphere implements Shape3D{
 
     @Override
     public Material getMaterial() {
-        return null;
+        return material;
     }
 }

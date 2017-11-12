@@ -9,4 +9,10 @@ public class Material {
     public double glossIntensityR, glossIntensityG, glossIntensityB;
     
     BufferedImage texture;
+
+    public Material() {
+        diffuseReflectivityR = diffuseReflectivityG = diffuseReflectivityB = 1.0;
+        gloss = 20;
+        glossIntensityR = glossIntensityG = glossIntensityB = 1.0;
+    }
 }

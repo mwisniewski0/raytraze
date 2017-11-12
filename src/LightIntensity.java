@@ -24,4 +24,30 @@ public class LightIntensity {
         green = ((double) color.getGreen()) / 255;
         blue = ((double) color.getBlue()) / 255;
     }
+
+    /**
+     * Turns this LightIntensity to a color displayable on the screen. whiteIntensity controls the exposure/shutter.
+     * @param whiteIntensity the maximum intensity of light - that is, everything above whiteIntensity will be turned
+     *                       into 255 in the final RGB color.
+     */
+    public Color translateToRGB(double whiteIntensity) {
+        int redComponent = getRGBComponentFromIntensity(red, whiteIntensity);
+        int greenComponent = getRGBComponentFromIntensity(green, whiteIntensity);
+        int blueComponent = getRGBComponentFromIntensity(blue, whiteIntensity);
+        return new Color(redComponent, greenComponent, blueComponent);
+    }
+
+    private int getRGBComponentFromIntensity(double intensity, double maxIntensity) {
+        int rgbComponent = (int) (intensity / maxIntensity * 255);
+        if (rgbComponent> 255) {
+            rgbComponent = 255;
+        }
+        return rgbComponent;
+    }
+
+    static public LightIntensity makeZero() {
+        LightIntensity result = new LightIntensity();
+        result.red = result.green = result.blue = 0;
+        return result;
+    }
 }
