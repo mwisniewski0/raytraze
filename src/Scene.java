@@ -94,7 +94,17 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
         transparent.material.refractionIndex = 1.33;
 
         shapes.add(transparent);
-        shapes.add(new Sphere(new Point3D(0,0,80.5), 80));
+
+//        Box box = new Box(
+//                new Point3D(0,0, 0),
+//                new Point3D(0,0, 5),
+//                new Point3D(5,0, 0),
+//                new Point3D(0,5, 0)
+//        );
+//        for (RectFace boxFace : box.getFaceList()) {
+//            shapes.add(boxFace);
+//        }
+        shapes.add(new RectFace(new Point3D(0,0,0), new Point3D(5, 0, 0), new Point3D(0, 5, 0)));
     }
 
     /**
