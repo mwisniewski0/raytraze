@@ -39,15 +39,44 @@ public class LightIntensity {
 
     private int getRGBComponentFromIntensity(double intensity, double maxIntensity) {
         int rgbComponent = (int) (intensity / maxIntensity * 255);
-        if (rgbComponent> 255) {
+        if (rgbComponent > 255) {
             rgbComponent = 255;
         }
         return rgbComponent;
     }
 
+    public LightIntensity multiply(double factor) {
+        LightIntensity result = new LightIntensity();
+        result.red = red * factor;
+        result.green = green * factor;
+        result.blue = blue * factor;
+        return result;
+    }
+
+    public LightIntensity add(LightIntensity other) {
+        LightIntensity result = new LightIntensity();
+        result.red = red + other.red;
+        result.green = green + other.green;
+        result.blue = blue + other.blue;
+        return result;
+    }
+
     static public LightIntensity makeZero() {
         LightIntensity result = new LightIntensity();
         result.red = result.green = result.blue = 0;
+        return result;
+    }
+
+    public boolean isZero() {
+        double epsilon = 0.000001;
+        return red + green + blue < epsilon;
+    }
+
+    public LightIntensity multiply(LightIntensity other) {
+        LightIntensity result = new LightIntensity();
+        result.red = red * other.red;
+        result.green = green * other.green;
+        result.blue = blue * other.blue;
         return result;
     }
 }

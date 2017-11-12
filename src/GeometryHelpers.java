@@ -157,4 +157,15 @@ public class GeometryHelpers {
     public static double vectorLengthSquared(Point3D v) {
         return v.dotProduct(v);
     }
+
+    public static Point3D refract(Point3D incidence, Point3D normal, double fromIndex, double toIndex) {
+        // Snell's law: sin(a1)/sin(a2) = index2/index1
+        // Thanks to a dude on SO: https://stackoverflow.com/a/29758766
+        double r = fromIndex/toIndex;
+        Point3D negNormal = new Point3D(0,0,0).subtract(normal);
+        double c = normal.dotProduct(incidence);
+
+        Point3D refracted = incidence.multiply(r).add(normal.multiply(r*c - Math.sqrt(1 - r*r*(1-c*c))));
+        return refracted.normalize();
+    }
 }

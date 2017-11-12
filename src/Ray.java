@@ -34,6 +34,10 @@ public class Ray {
         unitDirection = new Point3D(1,0,0);
     }
 
+    public void shift(double amount) {
+        origin = getPointAtDistance(amount);
+    }
+
     /**
      * Finds a point on the ray at a given distance
      * @param dFromRayStart The distance from the origin of the ray

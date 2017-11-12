@@ -11,6 +11,10 @@ public class IntersectionPoint {
         this.shape = shape;
     }
 
+    public Point3D getNormal() {
+        return this.shape.getNormalAtPoint(this.pointOfIntersection);
+    }
+
     public IntersectionPoint(){
 
     }

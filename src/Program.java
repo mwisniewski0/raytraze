@@ -9,17 +9,7 @@ public class Program {
         // Closing any of the windows results in the program terminating.
         JFrame displayFrame = new JFrame();
 
-        Scene scene = new Scene();
-        BufferedImage render = scene.render();
-        JPanel displayPanel = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                g.drawImage(render,0, render.getHeight(), render.getWidth(), -render.getHeight(), null);
-            }
-        };
-        displayPanel.setPreferredSize(new Dimension(render.getWidth(), render.getHeight()));
-        displayFrame.add(displayPanel);
+        displayFrame.add(new Scene());
         displayFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         displayFrame.pack();

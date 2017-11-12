@@ -200,14 +200,14 @@ public class Sphere implements Shape3D{
         double negT = (-b - sqrtDelta) / 2;
         double posT = (-b + sqrtDelta) / 2;
 
-        if(negT < 0 && posT < 0) {
+        if(negT <= 0 && posT <= 0) {
             // The sphere is behind the ray origin
             return null;
         }
 
         double dFromRayStart;
         boolean collidedInside = false;
-        if(negT < 0 && posT > 0) {
+        if(negT <= 0 && posT > 0) {
             // We hit the sphere from the inside
             dFromRayStart = posT;
             collidedInside = true;
