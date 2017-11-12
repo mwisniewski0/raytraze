@@ -7,7 +7,7 @@ import java.awt.*;
 /**
  * A simple sphere described by its center, radius and material.
  */
-public class Sphere {
+public class Sphere implements Shape3D{
     public Point3D center;
     public double radius;
     public Material material = new Material();
@@ -174,5 +174,55 @@ public class Sphere {
         }
 
         return new Color((float) r, (float) g, (float) b);
+    }
+
+    /**
+     * @param ray: The ray that interacts with this particular sphere.
+     * @return IntersectionPoint between the Sphere and the Ray projected
+     */
+    @Override
+    public IntersectionPoint castRay(Ray ray) {
+        Point3D co = ray.origin.subtract(center);
+        double b = 2 * (co.dotProduct(ray.unitDirection));
+        double c = co.dotProduct(co) - radius*radius;
+        double delta = b*b - 4*c; // Since a is 1 (unitDirection dot unitDirection0
+
+        if (delta < 0) return null;
+
+        double sqrtDelta = Math.sqrt(delta);
+        double negT = (-b - sqrtDelta) / 2;
+        double posT = (-b + sqrtDelta) / 2;
+
+        if(negT < 0 && posT < 0) {
+            // The sphere is behind the ray origin
+            return null;
+        }
+
+        double dFromRayStart;
+        boolean collidedInside = false;
+        if(negT < 0 && posT > 0) {
+            // We hit the sphere from the inside
+            dFromRayStart = posT;
+            collidedInside = true;
+        } else {
+            // Take the closer point of intersection
+            dFromRayStart = negT;
+        }
+        IntersectionPoint pointOfIntersection = new IntersectionPoint(ray.getPointAtDistance(dFromRayStart), collidedInside, this);
+        return pointOfIntersection;
+    }
+
+    /**
+     * @param pointInShape Point on the sphere
+     * @return point3D, The normal to the sphere at the given point
+     */
+    @Override
+    public Point3D getNormalAtPoint(Point3D pointInShape) {
+        return pointInShape.subtract(center).multiply(1.0/radius);
+    }
+
+    @Override
+    public Material getMaterial() {
+        return null;
     }
 }
