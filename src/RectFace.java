@@ -1,5 +1,6 @@
 import javafx.geometry.Point3D;
 
+import java.awt.*;
 import java.awt.geom.Point2D;
 
 public class RectFace implements Shape3D {
@@ -92,27 +93,32 @@ public class RectFace implements Shape3D {
         @Override
         public LightIntensity getDiffuseReflectivityAtPoint(Point3D p) {
             LightIntensity intensity = getMaterial().diffuseReflectivity;
+
+            if (getMaterial().texture != null) {
+                Point2D localCoordsPoint = face.getPointInLocalCoordinates(p);
+                int xPixel = (int) Math.round(localCoordsPoint.getX() / face.width * getMaterial().texture.getWidth());
+                int yPixel = (int) Math.round(localCoordsPoint.getY() / face.height * getMaterial().texture.getHeight());
+                if (xPixel < 0) {
+                    xPixel = 0;
+                }
+                if (xPixel >= getMaterial().texture.getWidth()) {
+                    xPixel = getMaterial().texture.getWidth() - 1;
+                }
+
+                if (yPixel < 0) {
+                    yPixel = 0;
+                }
+                if (yPixel >= getMaterial().texture.getHeight()) {
+                    yPixel = getMaterial().texture.getHeight() - 1;
+                }
+
+                LightIntensity textureIntensity = new LightIntensity();
+                textureIntensity.setColor(new Color(getMaterial().texture.getRGB(xPixel, yPixel)));
+
+                intensity = intensity.multiply(textureIntensity);
+            }
+
             return intensity;
-//            if (getMaterial().texture != null) {
-//                Point2D localCoordsPoint = face.getPointInLocalCoordinates(p);
-//                int xPixel = (int) Math.round(localCoordsPoint.getX() / width * getMaterial().texture.getWidth());
-//                int yPixel = (int) Math.round(localCoordsPoint.getY() / height * getMaterial().texture.getHeight());
-//                if (xPixel < 0) {
-//                    xPixel = 0;
-//                }
-//                if (xPixel >= getMaterial().texture.getWidth()) {
-//                    xPixel = getMaterial().texture.getWidth() - 1;
-//                }
-//
-//                if (yPixel < 0) {
-//                    yPixel = 0;
-//                }
-//                if (yPixel >= getMaterial().texture.getHeight()) {
-//                    yPixel = getMaterial().texture.getHeight() - 1;
-//                }
-//
-//
-//            }
         }
     }
 }

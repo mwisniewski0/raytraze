@@ -1,5 +1,6 @@
 import javafx.geometry.Point3D;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentEvent;
@@ -7,13 +8,16 @@ import java.awt.event.ComponentListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Scene extends JPanel implements KeyListener, ComponentListener {
     private static final double AIR_REFRACTION_INDEX = 1.0;
     private static final int LIGHT_SAMPLES_PER_LIGHT = 3;
-    private static final int MAX_TRACE_DEPTH = 10;
+    private static final int MAX_TRACE_DEPTH = 3;
+    private static final int MONTE_CARLO_SAMPLES = 10;
     private int width = 800, height = 600;
 
     private final double ROTATION_STEP = 0.1;
@@ -34,6 +38,7 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
         Point3D target = intersection.info.pointOfIntersection;
         LightIntensity result = LightIntensity.makeZero();
 
+        LightIntensity diffuseReflectivity = intersection.intersectedSolid.getDiffuseReflectivityAtPoint(intersection.info.pointOfIntersection);
         for (LightSource light : lightSources) {
             LightIntensity intensityFromThisLight = LightIntensity.makeZero();
 
@@ -42,14 +47,14 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
                 Point3D vectorToLight = lightSamplePos.subtract(target);
 
                 Ray rayToLight = new Ray(target, vectorToLight.normalize());
-                Solid.Intersection solidIntersection = castRayOnShapes(rayToLight);
+                Solid.Intersection solidIntersection = castRayOnSolids(rayToLight);
                 if (solidIntersection == null ||
                         solidIntersection.info.pointOfIntersection.distance(target) > lightSamplePos.distance(target)) {
                     double normalDotLightRay = intersection.info.getNormal().dotProduct((rayToLight.unitDirection));
                     if (normalDotLightRay < 0) {
                         normalDotLightRay *= -1;
                     }
-                    LightIntensity illumination = intersection.intersectedSolid.getMaterial().diffuseReflectivity.multiply(light.intensity.red);
+                    LightIntensity illumination = diffuseReflectivity.multiply(light.intensity.red);
                     illumination = illumination.multiply(normalDotLightRay);
 
                     intensityFromThisLight = intensityFromThisLight.add(illumination);
@@ -60,7 +65,7 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
             result = result.add(intensityFromThisLight);
         }
 
-        result = result.add(ambientLight.multiply(intersection.intersectedSolid.getMaterial().diffuseReflectivity));
+        result = result.add(ambientLight.multiply(diffuseReflectivity));
         return result;
     }
 
@@ -77,7 +82,7 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
 
     private void setUpScene() {
         camera = new Camera(
-                new Point3D(0, 0, 5),
+                new Point3D(-9.99, 9.99, -9.99),
                 new Point3D(0,0,0),
                 new Point3D(0,1,0),
                 Math.PI * 0.5, width, height
@@ -93,11 +98,11 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
 
         lightSources.add(
                 new LightSource(
-                        new LightIntensity(1.7, 1.7, 1.7),
+                        new LightIntensity(.8, .8, .8),
                         new RectFace(
-                                new Point3D(-1, -9.99, -1),
-                                new Point3D(1,  -9.99, -1),
-                                new Point3D(-1, -9.99, 1)
+                                new Point3D(-1, 4.99, -1),
+                                new Point3D(1,  4.99, -1),
+                                new Point3D(-1, 4.99, 1)
                         )
                 ));
 
@@ -141,6 +146,12 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
         Material bottomWallMaterial = new Material();
         bottomWallMaterial.diffuseReflectivity = new LightIntensity(1.0,1.0, 1.0);
 
+        try {
+            bottomWallMaterial.texture = ImageIO.read(new File("C:\\Class_work\\checkerboard.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         solids.add(new RectFace.FaceSolid(boundingBox.left, leftWallMaterial));
         solids.add(new RectFace.FaceSolid(boundingBox.right, rightWallMaterial));
         solids.add(new RectFace.FaceSolid(boundingBox.front, frontWallMaterial));
@@ -156,7 +167,7 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
 
         currentTraceDepth += 1;
 
-        Solid.Intersection solidIntersection = castRayOnShapes(ray);
+        Solid.Intersection solidIntersection = castRayOnSolids(ray);
         LightSource.Intersection lightIntersection = castRayOnLights(ray);
 
         LightIntensity result = LightIntensity.makeZero();
@@ -189,7 +200,70 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
                     .multiply(intersection.intersectedSolid.getMaterial().directReflectivity));
         }
         result = result.add(computeDirectDiffuse(intersection));
+        result = result.add(computeIndirectDiffuse(intersection));
         return result;
+    }
+
+    private LightIntensity computeIndirectDiffuse(Solid.Intersection intersection) {
+        LightIntensity averageResult = LightIntensity.makeZero();
+        double totalWeight = 0;
+
+        //Utilizes Monte Carlo approach
+        for(int MCSample = 0; MCSample < MONTE_CARLO_SAMPLES; ++MCSample) {
+            Point3D randomVector = GeometryHelpers.randVector().normalize();
+            Ray ray = new Ray(intersection.info.pointOfIntersection, randomVector);
+
+            double rayDotNormal = randomVector.dotProduct(intersection.info.getNormal());
+            totalWeight += rayDotNormal;
+
+            if (rayDotNormal <= 0) {
+                // Retry
+                MCSample -= 1;
+                continue;
+            }
+
+            LightIntensity intensity = traceRay(ray);
+            intensity = intensity.multiply(rayDotNormal).multiply(intersection.intersectedSolid.getDiffuseReflectivityAtPoint(intersection.info.pointOfIntersection));
+
+            averageResult = averageResult.add(intensity);
+        }
+        return averageResult.multiply(1.0/totalWeight);
+//            Solid.Intersection target = castRayOnSolids(nRay);
+//
+//            LightIntensity result = LightIntensity.makeZero();
+//            for (LightSource light : lightSources) {
+//                LightIntensity intensityFromThisLight = LightIntensity.makeZero();
+//
+//                for (int i = 0; i < LIGHT_SAMPLES_PER_LIGHT; ++i) {
+//                    Ray rayToLight = null;
+//                    if (target != null) {
+//                        Point3D lightSamplePos = light.getRandomPoint();
+//                        Point3D vectorToLight = lightSamplePos.subtract(target.info.pointOfIntersection);
+//                        rayToLight = new Ray(target.info.pointOfIntersection, vectorToLight.normalize());
+//
+//                        Solid.Intersection solidIntersection = castRayOnSolids(rayToLight);
+//                        if (solidIntersection == null) {
+//                            double normalDotLightRay = intersection.info.getNormal().dotProduct((rayToLight.unitDirection));
+//                            if (normalDotLightRay < 0) {
+//                                normalDotLightRay = 0;
+//                            }
+//                            LightIntensity illumination = intersection.intersectedSolid.getMaterial().diffuseReflectivity.multiply(light.intensity.red);
+//                            illumination = illumination.multiply(normalDotLightRay);
+//
+//                            intensityFromThisLight = intensityFromThisLight.add(illumination);
+//                        }
+//                    }
+//                }
+//
+//                intensityFromThisLight = intensityFromThisLight.multiply(1.0 / LIGHT_SAMPLES_PER_LIGHT);
+//                result = result.add(intensityFromThisLight);
+//            }
+//            result = result.add(ambientLight.multiply(intersection.intersectedSolid.getMaterial().diffuseReflectivity));
+//            //averageResult = averageResult.add(result);
+//            averageResult = result.multiply(1.0/n);
+//        }
+//        return averageResult;
+
     }
 
     private LightIntensity handleReflectedRay(Ray ray, IntersectionPoint shapeIntersection) {
@@ -213,7 +287,7 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
         return traceRay(refractedRay);
     }
 
-    private Solid.Intersection castRayOnShapes(Ray ray) {
+    private Solid.Intersection castRayOnSolids(Ray ray) {
         ray = ray.getShifted(MINIMUM_RAY_LENGTH);
 
         double closestPointDistanceSquared = Double.POSITIVE_INFINITY;
@@ -280,6 +354,9 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
 
         for (int x = 0; x < canvas.getWidth(); ++x) {
             for (int y = 0; y < canvas.getHeight(); ++y) {
+                System.out.print(x);
+                System.out.print(" ");
+                System.out.println(y);
                 if (x == 355 && y == 368) {
                     int a = 1;
                 }
