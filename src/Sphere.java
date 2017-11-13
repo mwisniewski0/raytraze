@@ -107,88 +107,12 @@ public class Sphere implements Shape3D{
     }
 
     /**
-     * Computes the color of the specified point on the sphere using the material information and data about a single
-     * light source.
-     * @param viewedPoint The world coordinates of a point on the sphere for which we are finding the color
-     * @param camera The position of the observer
-     * @param light The light source used for finding the color of the point
-     * @param ambientLight The intensity of the ambient light
-     * @return The color of the specified point on the sphere
-     */
-    public Color computeColor(Point3D viewedPoint, Point3D camera, LightSource light, LightIntensity ambientLight) {
-        double colorReflectivityR = material.diffuseReflectivityR;
-        double colorReflectivityG = material.diffuseReflectivityG;
-        double colorReflectivityB = material.diffuseReflectivityB;
-
-        if (material.texture != null) {
-            LightIntensity texelIntensity = computeTextureDiffuseReflectivity(viewedPoint);
-            colorReflectivityR *= texelIntensity.red;
-            colorReflectivityG *= texelIntensity.green;
-            colorReflectivityB *= texelIntensity.blue;
-        }
-
-        Point3D lightRay = viewedPoint.subtract(light.position);
-        double lightDistance = lightRay.magnitude();
-        Point3D lightDir = lightRay.multiply(1.0/lightDistance);
-
-        Point3D normalToViewedPoint = normalAtPoint(viewedPoint);
-
-        // Prepare the diffuse component
-        double normalDotLightRay = normalToViewedPoint.dotProduct((lightDir.multiply(-1)));
-        if (normalDotLightRay < 0) {
-            normalDotLightRay = 0;
-        }
-        double diffuseR = normalDotLightRay * colorReflectivityR * light.intensities.red;
-        double diffuseG = normalDotLightRay * colorReflectivityG * light.intensities.green;
-        double diffuseB = normalDotLightRay * colorReflectivityB * light.intensities.blue;
-
-        // Prepare the specular component
-        // Calculate reflected ray direction
-        Point3D flippedLightDir = lightDir.multiply(-1);
-        Point3D reflectedRayDirection = flippedLightDir.subtract(
-                flippedLightDir.subtract(GeometryHelpers.projectVectorOntoVector(flippedLightDir, normalToViewedPoint))
-                        .multiply(2));
-        Point3D directionToCamera = camera.subtract(viewedPoint).normalize();
-
-        double rDotV = reflectedRayDirection.dotProduct(directionToCamera);
-        double specularCoefficient = Math.pow(rDotV, material.gloss);
-        if (rDotV < 0) {
-            specularCoefficient = 0;
-        }
-        double specularR = specularCoefficient * light.intensities.red * material.glossIntensityR;
-        double specularG = specularCoefficient * light.intensities.green * material.glossIntensityG;
-        double specularB = specularCoefficient * light.intensities.blue * material.glossIntensityB;
-
-        // ambient light:
-        double ambientR = ambientLight.red * colorReflectivityR;
-        double ambientG = ambientLight.red * colorReflectivityG;
-        double ambientB = ambientLight.red * colorReflectivityB;
-
-        // combined:
-        double r = diffuseR + specularR + ambientR;
-        double g = diffuseG + specularG + ambientG;
-        double b = diffuseB + specularB + ambientB;
-
-        // It is possible that some of our intensities went over 1.0, we need to clip them
-        if (r > 1.0) {
-            r = 1.0;
-        }
-        if (g > 1.0) {
-            g = 1.0;
-        }
-        if (b > 1.0) {
-            b = 1.0;
-        }
-
-        return new Color((float) r, (float) g, (float) b);
-    }
-
-    /**
      * @param ray: The ray that interacts with this particular sphere.
      * @return IntersectionPoint between the Sphere and the Ray projected
      */
     @Override
     public IntersectionPoint castRay(Ray ray) {
+
         Point3D co = ray.origin.subtract(center);
         double b = 2 * (co.dotProduct(ray.unitDirection));
         double c = co.dotProduct(co) - radius*radius;
