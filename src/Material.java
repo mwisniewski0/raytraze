@@ -7,8 +7,7 @@ import java.awt.image.BufferedImage;
  */
 public class Material {
     public LightIntensity diffuseReflectivity;
-    public double gloss;
-    public double glossIntensityR, glossIntensityG, glossIntensityB;
+    public LightIntensity directReflectivity;
     public LightIntensity passthroughIntensity;
     public double refractionIndex;
 
@@ -17,8 +16,7 @@ public class Material {
     public Material() {
         diffuseReflectivity = new LightIntensity();
         diffuseReflectivity.red = diffuseReflectivity.green = diffuseReflectivity.blue = 1.0;
-        gloss = 20;
-        glossIntensityR = glossIntensityG = glossIntensityB = 1.0;
+        directReflectivity = new LightIntensity();
         passthroughIntensity = new LightIntensity();
         refractionIndex = 1.0;
     }

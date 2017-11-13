@@ -4,6 +4,18 @@ import javafx.geometry.Point3D;
  * Small structure describing a point light source
  */
 public class LightSource {
+    public class Intersection {
+        public IntersectionPoint info;
+        public LightSource intersectedLight;
+
+        public Intersection(IntersectionPoint info, LightSource source) {
+            this.info = info;
+            this.intersectedLight = source;
+        }
+
+        public Intersection() {}
+    }
+
     public LightIntensity intensity = new LightIntensity();
     private RectFace shape;
 
@@ -21,5 +33,13 @@ public class LightSource {
 
     public RectFace getShape() {
         return shape;
+    }
+
+    public Intersection castRay(Ray ray) {
+        IntersectionPoint intersection = shape.castRay(ray);
+        if (intersection == null) {
+            return null;
+        }
+        return new Intersection(intersection, this);
     }
 }

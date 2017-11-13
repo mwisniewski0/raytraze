@@ -9,11 +9,11 @@ import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.stream.IntStream;
 
 public class Scene extends JPanel implements KeyListener, ComponentListener {
     private static final double AIR_REFRACTION_INDEX = 1.0;
-    private static final int LIGHT_SAMPLES_PER_LIGHT = 1;
+    private static final int LIGHT_SAMPLES_PER_LIGHT = 3;
+    private static final int MAX_TRACE_DEPTH = 10;
     private int width = 800, height = 600;
 
     private final double ROTATION_STEP = 0.1;
@@ -23,13 +23,15 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
 
     private static final double MINIMUM_RAY_LENGTH = 0.0001;
     Camera camera;
-    ArrayList<Shape3D> shapes = new ArrayList<>();
+    ArrayList<Solid> solids = new ArrayList<>();
     ArrayList<LightSource> lightSources = new ArrayList<>();
     private double exposure;
     private LightIntensity ambientLight;
 
-    private LightIntensity computeDirectDiffuse(IntersectionPoint point) {
-        Point3D target = point.pointOfIntersection;
+    int currentTraceDepth = 0;
+
+    private LightIntensity computeDirectDiffuse(Solid.Intersection intersection) {
+        Point3D target = intersection.info.pointOfIntersection;
         LightIntensity result = LightIntensity.makeZero();
 
         for (LightSource light : lightSources) {
@@ -40,14 +42,14 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
                 Point3D vectorToLight = lightSamplePos.subtract(target);
 
                 Ray rayToLight = new Ray(target, vectorToLight.normalize());
-                IntersectionPoint intersectionPoint = castRayOnShapes(rayToLight);
-                if (intersectionPoint == null ||
-                        intersectionPoint.pointOfIntersection.distance(target) > lightSamplePos.distance(target)) {
-                    double normalDotLightRay = point.shape.getNormalAtPoint(point.pointOfIntersection).dotProduct((rayToLight.unitDirection));
+                Solid.Intersection solidIntersection = castRayOnShapes(rayToLight);
+                if (solidIntersection == null ||
+                        solidIntersection.info.pointOfIntersection.distance(target) > lightSamplePos.distance(target)) {
+                    double normalDotLightRay = intersection.info.getNormal().dotProduct((rayToLight.unitDirection));
                     if (normalDotLightRay < 0) {
                         normalDotLightRay *= -1;
                     }
-                    LightIntensity illumination = point.shape.getMaterial().diffuseReflectivity.multiply(light.intensity.red);
+                    LightIntensity illumination = intersection.intersectedSolid.getMaterial().diffuseReflectivity.multiply(light.intensity.red);
                     illumination = illumination.multiply(normalDotLightRay);
 
                     intensityFromThisLight = intensityFromThisLight.add(illumination);
@@ -58,7 +60,7 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
             result = result.add(intensityFromThisLight);
         }
 
-        result = result.add(ambientLight.multiply(point.shape.getMaterial().diffuseReflectivity));
+        result = result.add(ambientLight.multiply(intersection.intersectedSolid.getMaterial().diffuseReflectivity));
         return result;
     }
 
@@ -80,8 +82,8 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
                 new Point3D(0,1,0),
                 Math.PI * 0.5, width, height
         );
+        camera.rotateHorizontal(-Math.PI * 0.1);
 
-        camera.rotateVertical(Math.PI * 0.4);
 
         exposure = 1.0;
         ambientLight = new LightIntensity();
@@ -91,138 +93,168 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
 
         lightSources.add(
                 new LightSource(
-                        new LightIntensity(1.3, 1.3, 1.3),
+                        new LightIntensity(1.7, 1.7, 1.7),
                         new RectFace(
-                                new Point3D(-0.5, -6, -0.5),
-                                new Point3D(0.5,  -6, -0.5),
-                                new Point3D(-0.5, -6, .5)
+                                new Point3D(-1, -9.99, -1),
+                                new Point3D(1,  -9.99, -1),
+                                new Point3D(-1, -9.99, 1)
                         )
                 ));
 
-        shapes.add(new Sphere(new Point3D(0,0,0), 1));
+        Material reflective = new Material();
+        reflective.diffuseReflectivity.red = 0.2;
+        reflective.diffuseReflectivity.green = 0.2;
+        reflective.diffuseReflectivity.blue  = 0.2;
+        reflective.directReflectivity = LightIntensity.makeUniformRGB(0.5);
 
-        Sphere transparent = new Sphere(new Point3D(-1.3,0,-0.2), 0.5);
-        transparent.material.diffuseReflectivity.red = 0.0;
-        transparent.material.diffuseReflectivity.green = 0.0;
-        transparent.material.diffuseReflectivity.blue = 0.0;
-        transparent.material.passthroughIntensity.red =   0.9;
-        transparent.material.passthroughIntensity.green = 0.9;
-        transparent.material.passthroughIntensity.blue =  0.9;
-        transparent.material.refractionIndex = 1.33;
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(0,0,0), 1), reflective));
 
-        shapes.add(transparent);
+        Material glass = new Material();
+        glass.diffuseReflectivity.red = 0.0;
+        glass.diffuseReflectivity.green = 0.0;
+        glass.diffuseReflectivity.blue = 0.0;
+        glass.passthroughIntensity.red =   0.9;
+        glass.passthroughIntensity.green = 0.9;
+        glass.passthroughIntensity.blue =  0.9;
+        glass.directReflectivity = LightIntensity.makeUniformRGB(0.1);
+        glass.refractionIndex = 1.33;
 
-        Box boudingBox = new Box(
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-4.3,0,-0.2), 1), glass));
+
+        Box boundingBox = new Box(
                 new Point3D(-10,10, 10),
                 new Point3D(-10,10, -10),
                 new Point3D(10,10, 10),
                 new Point3D(-10,-10, 10)
         );
-        boudingBox.left.material.diffuseReflectivity = new LightIntensity(1.0,1.0, 0);
-        boudingBox.right.material.diffuseReflectivity = new LightIntensity(1.0,0.0, 1.0);
-        boudingBox.front.material.diffuseReflectivity = new LightIntensity(1.0,0, 0);
-        boudingBox.back.material.diffuseReflectivity = new LightIntensity(1.0,0.0, 0);
-        boudingBox.top.material.diffuseReflectivity = new LightIntensity(1.0,1.0, 1.0);
-        boudingBox.bottom.material.diffuseReflectivity = new LightIntensity(1.0,1.0, 1.0);
 
-        for (RectFace boxFace : boudingBox.getFaceList()) {
-            shapes.add(boxFace);
-        }
+        Material leftWallMaterial = new Material();
+        leftWallMaterial.diffuseReflectivity = new LightIntensity(1.0,1.0, 0.3);
+        Material rightWallMaterial = new Material();
+        rightWallMaterial.diffuseReflectivity = new LightIntensity(1.0,0.3, 1.0);
+        Material frontWallMaterial = new Material();
+        frontWallMaterial.diffuseReflectivity = new LightIntensity(1.0,0.3, 0.3);
+        Material backWallMaterial = new Material();
+        backWallMaterial.diffuseReflectivity = new LightIntensity(1.0,0.3, 0.3);
+        Material topWallMaterial = new Material();
+        topWallMaterial.diffuseReflectivity = new LightIntensity(1.0,1.0, 1.0);
+        Material bottomWallMaterial = new Material();
+        bottomWallMaterial.diffuseReflectivity = new LightIntensity(1.0,1.0, 1.0);
+
+        solids.add(new RectFace.FaceSolid(boundingBox.left, leftWallMaterial));
+        solids.add(new RectFace.FaceSolid(boundingBox.right, rightWallMaterial));
+        solids.add(new RectFace.FaceSolid(boundingBox.front, frontWallMaterial));
+        solids.add(new RectFace.FaceSolid(boundingBox.back, backWallMaterial));
+        solids.add(new RectFace.FaceSolid(boundingBox.top, topWallMaterial));
+        solids.add(new RectFace.FaceSolid(boundingBox.bottom, bottomWallMaterial));
     }
 
-    int refrCount = 0;
     public LightIntensity traceRay(Ray ray) {
+        if (currentTraceDepth > MAX_TRACE_DEPTH) {
+            return LightIntensity.makeZero();
+        }
 
+        currentTraceDepth += 1;
 
-        boolean wasRefr = false;
-        IntersectionPoint shapeIntersection = castRayOnShapes(ray);
-        IntersectionPoint lightIntersection = castRayOnLights(ray);
+        Solid.Intersection solidIntersection = castRayOnShapes(ray);
+        LightSource.Intersection lightIntersection = castRayOnLights(ray);
 
         LightIntensity result = LightIntensity.makeZero();
-        if (shapeIntersection == null && lightIntersection == null) {
+        if (solidIntersection == null && lightIntersection == null) {
             // Nothing to do
-        } else if (shapeIntersection == null && lightIntersection != null) {
+        } else if (solidIntersection == null && lightIntersection != null) {
             result = result.add(lightSources.get(0).intensity);
-        } else if (shapeIntersection != null & lightIntersection == null) {
-            result = handleShapeRayHit(ray, shapeIntersection, result);
-        } else if (shapeIntersection.pointOfIntersection.distance(ray.origin) < lightIntersection.pointOfIntersection.distance(ray.origin)) {
-            result = handleShapeRayHit(ray, shapeIntersection, result);
+        } else if (solidIntersection != null & lightIntersection == null) {
+            result = handleSolidRayHit(ray, solidIntersection, result);
+        } else if (solidIntersection.info.pointOfIntersection.distance(ray.origin) < lightIntersection.info.pointOfIntersection.distance(ray.origin)) {
+            result = handleSolidRayHit(ray, solidIntersection, result);
         } else {
             result = result.add(lightSources.get(0).intensity);
         }
+
+        currentTraceDepth -= 1;
+
         return result;
     }
 
-    private LightIntensity handleShapeRayHit(Ray ray, IntersectionPoint shapeIntersection, LightIntensity result) {
+    private LightIntensity handleSolidRayHit(Ray ray, Solid.Intersection intersection, LightIntensity result) {
         ray = ray.getShifted(MINIMUM_RAY_LENGTH);
 
-        if (!shapeIntersection.shape.getMaterial().passthroughIntensity.isZero()) {
-            Point3D refractedRayDirection;
-            if (shapeIntersection.collidedInside) {
-                // Getting out of the shape
-                refractedRayDirection = GeometryHelpers.refract(
-                        ray.unitDirection, shapeIntersection.getNormal(), shapeIntersection.shape.getMaterial().refractionIndex, AIR_REFRACTION_INDEX);
-            } else {
-                // Entering the shape
-                refractedRayDirection = GeometryHelpers.refract(
-                        ray.unitDirection, shapeIntersection.getNormal(), AIR_REFRACTION_INDEX, shapeIntersection.shape.getMaterial().refractionIndex);
-            }
-            refrCount += 1;
-            Ray refractedRay = new Ray(shapeIntersection.pointOfIntersection, refractedRayDirection);
-            result = result.add(traceRay(refractedRay).multiply(shapeIntersection.shape.getMaterial().passthroughIntensity));
-            if (result.isZero()) {
-                int a = 1;
-            }
-            refrCount -= 1;
+        if (!intersection.intersectedSolid.getMaterial().passthroughIntensity.isZero()) {
+            result = result.add(handleRefractedRay(ray, intersection)
+                    .multiply(intersection.intersectedSolid.getMaterial().passthroughIntensity));
         }
-        result = result.add(computeDirectDiffuse(shapeIntersection));
+        if (!intersection.intersectedSolid.getMaterial().directReflectivity.isZero()) {
+            result = result.add(handleReflectedRay(ray, intersection.info)
+                    .multiply(intersection.intersectedSolid.getMaterial().directReflectivity));
+        }
+        result = result.add(computeDirectDiffuse(intersection));
         return result;
     }
 
-    private IntersectionPoint castRayOnShapes(Ray ray) {
+    private LightIntensity handleReflectedRay(Ray ray, IntersectionPoint shapeIntersection) {
+        Point3D reflectedRayDir = GeometryHelpers.reflect(ray.unitDirection, shapeIntersection.getNormal());
+        Ray reflectedRay = new Ray(shapeIntersection.pointOfIntersection, reflectedRayDir);
+        return traceRay(reflectedRay);
+    }
+
+    private LightIntensity handleRefractedRay(Ray ray, Solid.Intersection solidIntersection) {
+        Point3D refractedRayDirection;
+        if (solidIntersection.info.collidedInside) {
+            // Getting out of the shape
+            refractedRayDirection = GeometryHelpers.refract(
+                    ray.unitDirection, solidIntersection.info.getNormal(), solidIntersection.intersectedSolid.getMaterial().refractionIndex, AIR_REFRACTION_INDEX);
+        } else {
+            // Entering the shape
+            refractedRayDirection = GeometryHelpers.refract(
+                    ray.unitDirection, solidIntersection.info.getNormal(), AIR_REFRACTION_INDEX, solidIntersection.intersectedSolid.getMaterial().refractionIndex);
+        }
+        Ray refractedRay = new Ray(solidIntersection.info.pointOfIntersection, refractedRayDirection);
+        return traceRay(refractedRay);
+    }
+
+    private Solid.Intersection castRayOnShapes(Ray ray) {
         ray = ray.getShifted(MINIMUM_RAY_LENGTH);
 
         double closestPointDistanceSquared = Double.POSITIVE_INFINITY;
-        IntersectionPoint closestPoint = null;
-        for (Shape3D shape : shapes) {
-            IntersectionPoint intersectionPoint = shape.castRay(ray);
-            if (intersectionPoint != null) {
+        Solid.Intersection closestIntersection = null;
+        for (Solid solid : solids) {
+            Solid.Intersection intersection = solid.castRay(ray);
+            if (intersection != null) {
                 double distanceToIntersectionSquared =
-                        GeometryHelpers.vectorLengthSquared(intersectionPoint.pointOfIntersection.subtract(ray.origin));
+                        GeometryHelpers.vectorLengthSquared(intersection.info.pointOfIntersection.subtract(ray.origin));
 
                 // To avoid hitting the shape from which the ray was shot, the ray has to have a minimum length
                 if (distanceToIntersectionSquared > MINIMUM_RAY_LENGTH*MINIMUM_RAY_LENGTH) {
                     if (distanceToIntersectionSquared < closestPointDistanceSquared) {
                         closestPointDistanceSquared = distanceToIntersectionSquared;
-                        closestPoint = intersectionPoint;
+                        closestIntersection = intersection;
                     }
                 }
             }
         }
-        return closestPoint;
+        return closestIntersection;
     }
 
-    private IntersectionPoint castRayOnLights(Ray ray) {
+    private LightSource.Intersection castRayOnLights(Ray ray) {
         double closestPointDistanceSquared = Double.POSITIVE_INFINITY;
-        IntersectionPoint closestPoint = null;
+        LightSource.Intersection closestIntersection = null;
         for (LightSource light : lightSources) {
-            Shape3D shape = light.getShape();
-
-            IntersectionPoint intersectionPoint = shape.castRay(ray);
-            if (intersectionPoint != null) {
+            LightSource.Intersection intersection = light.castRay(ray);
+            if (intersection != null) {
                 double distanceToIntersectionSquared =
-                        GeometryHelpers.vectorLengthSquared(intersectionPoint.pointOfIntersection.subtract(ray.origin));
+                        GeometryHelpers.vectorLengthSquared(intersection.info.pointOfIntersection.subtract(ray.origin));
 
                 // To avoid hitting the shape from which the ray was shot, the ray has to have a minimum length
                 if (distanceToIntersectionSquared > MINIMUM_RAY_LENGTH*MINIMUM_RAY_LENGTH) {
                     if (distanceToIntersectionSquared < closestPointDistanceSquared) {
                         closestPointDistanceSquared = distanceToIntersectionSquared;
-                        closestPoint = intersectionPoint;
+                        closestIntersection = intersection;
                     }
                 }
             }
         }
-        return closestPoint;
+        return closestIntersection;
     }
 
     int fpsCount = 0;

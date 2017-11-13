@@ -3,8 +3,6 @@ import javafx.geometry.Point3D;
 import java.awt.geom.Point2D;
 
 public class RectFace implements Shape3D {
-    public Material material = new Material();
-
     private Point3D topLeft;
     private Point3D down;
     private Point3D right;
@@ -71,11 +69,6 @@ public class RectFace implements Shape3D {
         return normal;
     }
 
-    @Override
-    public Material getMaterial() {
-        return material;
-    }
-
     public double getWidth() {
         return width;
     }
@@ -86,5 +79,40 @@ public class RectFace implements Shape3D {
 
     public Point3D getWorldPointAt(double x, double y) {
         return topLeft.add(right.multiply(x)).add(down.multiply(y));
+    }
+
+    public static class FaceSolid extends Solid {
+        RectFace face;
+
+        public FaceSolid(RectFace face, Material material) {
+            super(face, material);
+            this.face = face;
+        }
+
+        @Override
+        public LightIntensity getDiffuseReflectivityAtPoint(Point3D p) {
+            LightIntensity intensity = getMaterial().diffuseReflectivity;
+            return intensity;
+//            if (getMaterial().texture != null) {
+//                Point2D localCoordsPoint = face.getPointInLocalCoordinates(p);
+//                int xPixel = (int) Math.round(localCoordsPoint.getX() / width * getMaterial().texture.getWidth());
+//                int yPixel = (int) Math.round(localCoordsPoint.getY() / height * getMaterial().texture.getHeight());
+//                if (xPixel < 0) {
+//                    xPixel = 0;
+//                }
+//                if (xPixel >= getMaterial().texture.getWidth()) {
+//                    xPixel = getMaterial().texture.getWidth() - 1;
+//                }
+//
+//                if (yPixel < 0) {
+//                    yPixel = 0;
+//                }
+//                if (yPixel >= getMaterial().texture.getHeight()) {
+//                    yPixel = getMaterial().texture.getHeight() - 1;
+//                }
+//
+//
+//            }
+        }
     }
 }

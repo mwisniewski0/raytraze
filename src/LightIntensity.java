@@ -87,4 +87,8 @@ public class LightIntensity {
         result.blue = blue * other.blue;
         return result;
     }
+
+    public static LightIntensity makeUniformRGB(double componentValue) {
+        return new LightIntensity(componentValue, componentValue, componentValue);
+    }
 }

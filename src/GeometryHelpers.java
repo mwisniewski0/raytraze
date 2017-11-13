@@ -180,6 +180,8 @@ public class GeometryHelpers {
     }
 
     public static Point3D reflect(Point3D incidence, Point3D normal) {
-        return incidence.add(projectVectorOntoPlane(incidence, normal).multiply(2.0));
+        return incidence.subtract(
+                incidence.subtract(GeometryHelpers.projectVectorOntoVector(incidence, normal)).multiply(2))
+                .multiply(-1);
     }
 }
