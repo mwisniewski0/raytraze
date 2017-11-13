@@ -118,7 +118,7 @@ public class Camera {
     }
 
     /**
-     * Moves the observer forward (in the opposite direction from the one in which they're looking).
+     * Moves the observer backward (in the opposite direction from the one in which they're looking).
      * @param amount The amount of displacement in world coordinates
      */
     public void moveBackward(double amount) {
