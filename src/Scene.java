@@ -15,8 +15,8 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
     private static final double AIR_REFRACTION_INDEX = 1.0;
     private int width = 800, height = 600;
     private final double LIGHT_MOVEMENT = 0.05;
-    private final double ROTATION_STEP = 0.05;
-    private final double CAMERA_MOVE_STEP = 0.05;
+    private final double ROTATION_STEP = 0.1;
+    private final double CAMERA_MOVE_STEP = 0.5;
 
     BufferedImage canvas;
 
@@ -51,7 +51,7 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
                 result = result.add(illumination);
             }
         }
-
+        result.add(ambientLight);
         return result;
     }
 
@@ -76,9 +76,9 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
 
         exposure = 1.0;
         ambientLight = new LightIntensity();
-        ambientLight.red = 0.1;
-        ambientLight.green = 0.1;
-        ambientLight.blue = 0.1;
+        ambientLight.red =   0.0;
+        ambientLight.green = 0.0;
+        ambientLight.blue =  0.0;
 
         lightSources.add(new LightSource(new Point3D(-1, -3, -5), 1.0, 1.0, 1.0));
 
@@ -95,16 +95,15 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
 
         shapes.add(transparent);
 
-//        Box box = new Box(
-//                new Point3D(0,0, 0),
-//                new Point3D(0,0, 5),
-//                new Point3D(5,0, 0),
-//                new Point3D(0,5, 0)
-//        );
-//        for (RectFace boxFace : box.getFaceList()) {
-//            shapes.add(boxFace);
-//        }
-        shapes.add(new RectFace(new Point3D(0,0,0), new Point3D(5, 0, 0), new Point3D(0, 5, 0)));
+        Box box = new Box(
+                new Point3D(0,0, 0),
+                new Point3D(0,0, 5),
+                new Point3D(5,0, 0),
+                new Point3D(0,5, 0)
+        );
+        for (RectFace boxFace : box.getFaceList()) {
+            shapes.add(boxFace);
+        }
     }
 
     /**

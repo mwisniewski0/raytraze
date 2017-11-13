@@ -24,8 +24,28 @@ public class RectFace implements Shape3D {
 
     private Point2D.Double getPointInLocalCoordinates(Point3D pointOnFace) {
         Point3D vectorFromTopLeft = pointOnFace.subtract(topLeft);
-        double xCoordinate = GeometryHelpers.projectVectorOntoVector(vectorFromTopLeft, right).magnitude();
-        double yCoordinate = GeometryHelpers.projectVectorOntoVector(vectorFromTopLeft, down).magnitude();
+
+        Point3D xOrientedComponent = GeometryHelpers.projectVectorOntoVector(vectorFromTopLeft, right);
+        Point3D yOrientedComponent = vectorFromTopLeft.subtract(xOrientedComponent);
+
+        double xCoordinate, yCoordinate;
+
+        if (right.getX() != 0) {
+            xCoordinate = xOrientedComponent.getX() / right.getX() * width;
+        } else if (right.getY() != 0) {
+            xCoordinate = xOrientedComponent.getY() / right.getY() * width;
+        } else {
+            xCoordinate = xOrientedComponent.getZ() / right.getZ() * width;
+        }
+
+        if (down.getX() != 0) {
+            yCoordinate = yOrientedComponent.getX() / down.getX() * height;
+        } else if (down.getY() != 0) {
+            yCoordinate = yOrientedComponent.getY() / down.getY() * height;
+        } else {
+            yCoordinate = yOrientedComponent.getZ() / down.getZ() * height;
+        }
+
         return new Point2D.Double(xCoordinate, yCoordinate);
     }
 

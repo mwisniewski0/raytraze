@@ -17,14 +17,14 @@ public class Box {
         front = new RectFace(topLeftFront, topRightFront, bottomLeftFront);
         back = new RectFace(topLeftBack, topRightBack, bottomLeftBack);
         left = new RectFace(topLeftBack, topLeftFront, bottomLeftBack);
-        right = new RectFace(topRightFront, bottomRightBack, bottomRightFront);
+        right = new RectFace(topRightFront, topRightBack, bottomRightFront);
         top = new RectFace(topLeftBack, topRightBack, topLeftFront);
         bottom = new RectFace(bottomRightFront, bottomLeftFront, bottomRightBack);
     }
 
     public RectFace[] getFaceList() {
         RectFace[] result = new RectFace[] {
-          right
+          front, back, left, right, top, bottom
         };
         return result;
     }
