@@ -174,8 +174,7 @@ public class GeometryHelpers {
     /*
     * Randomizes three compoonents for a vector and returns it.*/
     public static Point3D randVector() {
-        Random rand = new Random();
-        Point3D randVector = new Point3D(rand.nextDouble(), rand.nextDouble(), rand.nextDouble());
+        Point3D randVector = new Point3D(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5);
         return randVector;
     }
 

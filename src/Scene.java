@@ -214,14 +214,12 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
             Ray ray = new Ray(intersection.info.pointOfIntersection, randomVector);
 
             double rayDotNormal = randomVector.dotProduct(intersection.info.getNormal());
-            totalWeight += rayDotNormal;
-
             if (rayDotNormal <= 0) {
                 // Retry
                 MCSample -= 1;
                 continue;
             }
-
+            totalWeight += rayDotNormal;
             LightIntensity intensity = traceRay(ray);
             intensity = intensity.multiply(rayDotNormal).multiply(intersection.intersectedSolid.getDiffuseReflectivityAtPoint(intersection.info.pointOfIntersection));
 
@@ -357,7 +355,7 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
                 System.out.print(x);
                 System.out.print(" ");
                 System.out.println(y);
-                if (x == 355 && y == 368) {
+                if (x == 508 && y == 294) {
                     int a = 1;
                 }
                 Ray ray = camera.getRayForPixel(x, y);
