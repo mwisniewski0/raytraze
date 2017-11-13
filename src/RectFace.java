@@ -75,4 +75,16 @@ public class RectFace implements Shape3D {
     public Material getMaterial() {
         return material;
     }
+
+    public double getWidth() {
+        return width;
+    }
+
+    public double getHeight() {
+        return height;
+    }
+
+    public Point3D getWorldPointAt(double x, double y) {
+        return topLeft.add(right.multiply(x)).add(down.multiply(y));
+    }
 }

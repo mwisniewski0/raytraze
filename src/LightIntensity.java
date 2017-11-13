@@ -9,6 +9,14 @@ public class LightIntensity {
     public double green;
     public double red;
 
+    public LightIntensity() {}
+
+    public LightIntensity(double r, double g, double b) {
+        red = r;
+        green = g;
+        blue = b;
+    }
+
     /**
      * @return The color representation of this LightIntensity
      */

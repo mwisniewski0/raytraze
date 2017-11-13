@@ -13,6 +13,7 @@ import java.util.stream.IntStream;
 
 public class Scene extends JPanel implements KeyListener, ComponentListener {
     private static final double AIR_REFRACTION_INDEX = 1.0;
+    private static final int LIGHT_SAMPLES_PER_LIGHT = 4;
     private int width = 800, height = 600;
     private final double LIGHT_MOVEMENT = 0.05;
     private final double ROTATION_STEP = 0.1;
@@ -32,21 +33,28 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
         LightIntensity result = LightIntensity.makeZero();
 
         for (LightSource light : lightSources) {
-            Point3D vectorToLight = light.position.subtract(target);
+            LightIntensity intensityFromThisLight = LightIntensity.makeZero();
 
-            Ray rayToLight = new Ray(target, vectorToLight.normalize());
-            IntersectionPoint intersectionPoint = castRayOnShapes(rayToLight);
-            if (intersectionPoint == null) {
-                double normalDotLightRay = point.shape.getNormalAtPoint(point.pointOfIntersection).dotProduct((rayToLight.unitDirection));
-                if (normalDotLightRay < 0) {
-                    normalDotLightRay = 0;
+            for (int i = 0; i < LIGHT_SAMPLES_PER_LIGHT; ++i) {
+                Point3D lightSamplePos = light.getRandomPoint();
+                Point3D vectorToLight = lightSamplePos.subtract(target);
+
+                Ray rayToLight = new Ray(target, vectorToLight.normalize());
+                IntersectionPoint intersectionPoint = castRayOnShapes(rayToLight);
+                if (intersectionPoint == null) {
+                    double normalDotLightRay = point.shape.getNormalAtPoint(point.pointOfIntersection).dotProduct((rayToLight.unitDirection));
+                    if (normalDotLightRay < 0) {
+                        normalDotLightRay = 0;
+                    }
+                    LightIntensity illumination = point.shape.getMaterial().diffuseReflectivity.multiply(light.intensity.red);
+                    illumination = illumination.multiply(normalDotLightRay);
+
+                    intensityFromThisLight = intensityFromThisLight.add(illumination);
                 }
-                LightIntensity illumination = new LightIntensity();
-                illumination = point.shape.getMaterial().diffuseReflectivity.multiply(light.intensities.red);
-                illumination = illumination.multiply(normalDotLightRay);
-
-                result = result.add(illumination);
             }
+
+            intensityFromThisLight = intensityFromThisLight.multiply(1.0 / LIGHT_SAMPLES_PER_LIGHT);
+            result = result.add(intensityFromThisLight);
         }
         result = result.add(ambientLight.multiply(point.shape.getMaterial().diffuseReflectivity));
         return result;
@@ -65,7 +73,7 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
 
     private void setUpScene() {
         camera = new Camera(
-                new Point3D(0, 0, -5),
+                new Point3D(-7, 0, 0),
                 new Point3D(0,0,0),
                 new Point3D(0,1,0),
                 Math.PI * 0.5, width, height
@@ -77,7 +85,15 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
         ambientLight.green = 0.1;
         ambientLight.blue =  0.1;
 
-        lightSources.add(new LightSource(new Point3D(-1, -3, -5), 1.0, 1.0, 1.0));
+        lightSources.add(
+                new LightSource(
+                        new LightIntensity(1.3, 1.3, 1.3),
+                        new RectFace(
+                                new Point3D(0, 0, -10),
+                                new Point3D(-1, 0, -10),
+                                new Point3D(0, -1, -10)
+                        )
+                ));
 
         shapes.add(new Sphere(new Point3D(0,0,0), 1));
 
@@ -216,33 +232,7 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
     }
 
     private void update() {
-        LightSource light = lightSources.get(0);
-
         boolean repaintNeeded = false;
-        if (isKeyDown(KeyEvent.VK_I)) {
-            light.position = light.position.add(0, LIGHT_MOVEMENT, 0);
-            repaintNeeded = true;
-        }
-        if (isKeyDown(KeyEvent.VK_K)) {
-            light.position = light.position.add(0, -LIGHT_MOVEMENT, 0);
-            repaintNeeded = true;
-        }
-        if (isKeyDown(KeyEvent.VK_J)) {
-            light.position = light.position.add(-LIGHT_MOVEMENT, 0, 0);
-            repaintNeeded = true;
-        }
-        if (isKeyDown(KeyEvent.VK_L)) {
-            light.position = light.position.add(LIGHT_MOVEMENT, 0, 0);
-            repaintNeeded = true;
-        }
-        if (isKeyDown(KeyEvent.VK_U)) {
-            light.position = light.position.add(0, 0, LIGHT_MOVEMENT);
-            repaintNeeded = true;
-        }
-        if (isKeyDown(KeyEvent.VK_O)) {
-            light.position = light.position.add(0, 0, -LIGHT_MOVEMENT);
-            repaintNeeded = true;
-        }
 
         // Camera controls
         if (isKeyDown(KeyEvent.VK_R)) {
