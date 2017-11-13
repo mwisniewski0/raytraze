@@ -170,12 +170,16 @@ public class GeometryHelpers {
         return refracted.normalize();
     }
 
+
     /*
     * Randomizes three compoonents for a vector and returns it.*/
-    public static Point3D randVector()
-    {
+    public static Point3D randVector() {
         Random rand = new Random();
-        Point3D randVector = new Point3D(rand.nextDouble(),rand.nextDouble(),rand.nextDouble());
+        Point3D randVector = new Point3D(rand.nextDouble(), rand.nextDouble(), rand.nextDouble());
         return randVector;
+    }
+
+    public static Point3D reflect(Point3D incidence, Point3D normal) {
+        return incidence.add(projectVectorOntoPlane(incidence, normal).multiply(2.0));
     }
 }

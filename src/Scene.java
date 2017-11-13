@@ -13,9 +13,9 @@ import java.util.stream.IntStream;
 
 public class Scene extends JPanel implements KeyListener, ComponentListener {
     private static final double AIR_REFRACTION_INDEX = 1.0;
-    private static final int LIGHT_SAMPLES_PER_LIGHT = 4;
+    private static final int LIGHT_SAMPLES_PER_LIGHT = 1;
     private int width = 800, height = 600;
-    private final double LIGHT_MOVEMENT = 0.05;
+
     private final double ROTATION_STEP = 0.1;
     private final double CAMERA_MOVE_STEP = 0.5;
 
@@ -41,10 +41,11 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
 
                 Ray rayToLight = new Ray(target, vectorToLight.normalize());
                 IntersectionPoint intersectionPoint = castRayOnShapes(rayToLight);
-                if (intersectionPoint == null) {
+                if (intersectionPoint == null ||
+                        intersectionPoint.pointOfIntersection.distance(target) > lightSamplePos.distance(target)) {
                     double normalDotLightRay = point.shape.getNormalAtPoint(point.pointOfIntersection).dotProduct((rayToLight.unitDirection));
                     if (normalDotLightRay < 0) {
-                        normalDotLightRay = 0;
+                        normalDotLightRay *= -1;
                     }
                     LightIntensity illumination = point.shape.getMaterial().diffuseReflectivity.multiply(light.intensity.red);
                     illumination = illumination.multiply(normalDotLightRay);
@@ -56,6 +57,7 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
             intensityFromThisLight = intensityFromThisLight.multiply(1.0 / LIGHT_SAMPLES_PER_LIGHT);
             result = result.add(intensityFromThisLight);
         }
+
         result = result.add(ambientLight.multiply(point.shape.getMaterial().diffuseReflectivity));
         return result;
     }
@@ -73,11 +75,13 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
 
     private void setUpScene() {
         camera = new Camera(
-                new Point3D(-7, 0, 0),
+                new Point3D(0, 0, 5),
                 new Point3D(0,0,0),
                 new Point3D(0,1,0),
                 Math.PI * 0.5, width, height
         );
+
+        camera.rotateVertical(Math.PI * 0.4);
 
         exposure = 1.0;
         ambientLight = new LightIntensity();
@@ -89,9 +93,9 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
                 new LightSource(
                         new LightIntensity(1.3, 1.3, 1.3),
                         new RectFace(
-                                new Point3D(0, 0, -10),
-                                new Point3D(-1, 0, -10),
-                                new Point3D(0, -1, -10)
+                                new Point3D(-0.5, -6, -0.5),
+                                new Point3D(0.5,  -6, -0.5),
+                                new Point3D(-0.5, -6, .5)
                         )
                 ));
 
@@ -108,58 +112,102 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
 
         shapes.add(transparent);
 
-        Box box = new Box(
-                new Point3D(0,0, 0),
-                new Point3D(0,0, 5),
-                new Point3D(5,0, 0),
-                new Point3D(0,5, 0)
+        Box boudingBox = new Box(
+                new Point3D(-10,10, 10),
+                new Point3D(-10,10, -10),
+                new Point3D(10,10, 10),
+                new Point3D(-10,-10, 10)
         );
-        for (RectFace boxFace : box.getFaceList()) {
+        boudingBox.left.material.diffuseReflectivity = new LightIntensity(1.0,1.0, 0);
+        boudingBox.right.material.diffuseReflectivity = new LightIntensity(1.0,0.0, 1.0);
+        boudingBox.front.material.diffuseReflectivity = new LightIntensity(1.0,0, 0);
+        boudingBox.back.material.diffuseReflectivity = new LightIntensity(1.0,0.0, 0);
+        boudingBox.top.material.diffuseReflectivity = new LightIntensity(1.0,1.0, 1.0);
+        boudingBox.bottom.material.diffuseReflectivity = new LightIntensity(1.0,1.0, 1.0);
+
+        for (RectFace boxFace : boudingBox.getFaceList()) {
             shapes.add(boxFace);
         }
     }
 
     int refrCount = 0;
     public LightIntensity traceRay(Ray ray) {
-        ray.shift(MINIMUM_RAY_LENGTH);
+
 
         boolean wasRefr = false;
-        IntersectionPoint closestPoint = castRayOnShapes(ray);
+        IntersectionPoint shapeIntersection = castRayOnShapes(ray);
+        IntersectionPoint lightIntersection = castRayOnLights(ray);
 
         LightIntensity result = LightIntensity.makeZero();
-        if (closestPoint != null) {
-            if (!closestPoint.shape.getMaterial().passthroughIntensity.isZero()) {
-                Point3D refractedRayDirection;
-                if (closestPoint.collidedInside) {
-                    // Getting out of the shape
-                    refractedRayDirection = GeometryHelpers.refract(
-                            ray.unitDirection, closestPoint.getNormal(), closestPoint.shape.getMaterial().refractionIndex, AIR_REFRACTION_INDEX);
-                } else {
-                    // Entering the shape
-                    refractedRayDirection = GeometryHelpers.refract(
-                            ray.unitDirection, closestPoint.getNormal(), AIR_REFRACTION_INDEX, closestPoint.shape.getMaterial().refractionIndex);
-                }
-                refrCount += 1;
-                Ray refractedRay = new Ray(closestPoint.pointOfIntersection, refractedRayDirection);
-                result = result.add(traceRay(refractedRay).multiply(closestPoint.shape.getMaterial().passthroughIntensity));
-                if (result.isZero()) {
-                    int a = 1;
-                }
-                refrCount -= 1;
-                wasRefr = true;
-            }
-            result = result.add(computeDirectDiffuse(closestPoint));
-        }
-        if (closestPoint != null && closestPoint.shape == shapes.get(1)) {
-            int a = 1;
+        if (shapeIntersection == null && lightIntersection == null) {
+            // Nothing to do
+        } else if (shapeIntersection == null && lightIntersection != null) {
+            result = result.add(lightSources.get(0).intensity);
+        } else if (shapeIntersection != null & lightIntersection == null) {
+            result = handleShapeRayHit(ray, shapeIntersection, result);
+        } else if (shapeIntersection.pointOfIntersection.distance(ray.origin) < lightIntersection.pointOfIntersection.distance(ray.origin)) {
+            result = handleShapeRayHit(ray, shapeIntersection, result);
+        } else {
+            result = result.add(lightSources.get(0).intensity);
         }
         return result;
     }
 
+    private LightIntensity handleShapeRayHit(Ray ray, IntersectionPoint shapeIntersection, LightIntensity result) {
+        ray = ray.getShifted(MINIMUM_RAY_LENGTH);
+
+        if (!shapeIntersection.shape.getMaterial().passthroughIntensity.isZero()) {
+            Point3D refractedRayDirection;
+            if (shapeIntersection.collidedInside) {
+                // Getting out of the shape
+                refractedRayDirection = GeometryHelpers.refract(
+                        ray.unitDirection, shapeIntersection.getNormal(), shapeIntersection.shape.getMaterial().refractionIndex, AIR_REFRACTION_INDEX);
+            } else {
+                // Entering the shape
+                refractedRayDirection = GeometryHelpers.refract(
+                        ray.unitDirection, shapeIntersection.getNormal(), AIR_REFRACTION_INDEX, shapeIntersection.shape.getMaterial().refractionIndex);
+            }
+            refrCount += 1;
+            Ray refractedRay = new Ray(shapeIntersection.pointOfIntersection, refractedRayDirection);
+            result = result.add(traceRay(refractedRay).multiply(shapeIntersection.shape.getMaterial().passthroughIntensity));
+            if (result.isZero()) {
+                int a = 1;
+            }
+            refrCount -= 1;
+        }
+        result = result.add(computeDirectDiffuse(shapeIntersection));
+        return result;
+    }
+
     private IntersectionPoint castRayOnShapes(Ray ray) {
+        ray = ray.getShifted(MINIMUM_RAY_LENGTH);
+
         double closestPointDistanceSquared = Double.POSITIVE_INFINITY;
         IntersectionPoint closestPoint = null;
         for (Shape3D shape : shapes) {
+            IntersectionPoint intersectionPoint = shape.castRay(ray);
+            if (intersectionPoint != null) {
+                double distanceToIntersectionSquared =
+                        GeometryHelpers.vectorLengthSquared(intersectionPoint.pointOfIntersection.subtract(ray.origin));
+
+                // To avoid hitting the shape from which the ray was shot, the ray has to have a minimum length
+                if (distanceToIntersectionSquared > MINIMUM_RAY_LENGTH*MINIMUM_RAY_LENGTH) {
+                    if (distanceToIntersectionSquared < closestPointDistanceSquared) {
+                        closestPointDistanceSquared = distanceToIntersectionSquared;
+                        closestPoint = intersectionPoint;
+                    }
+                }
+            }
+        }
+        return closestPoint;
+    }
+
+    private IntersectionPoint castRayOnLights(Ray ray) {
+        double closestPointDistanceSquared = Double.POSITIVE_INFINITY;
+        IntersectionPoint closestPoint = null;
+        for (LightSource light : lightSources) {
+            Shape3D shape = light.getShape();
+
             IntersectionPoint intersectionPoint = shape.castRay(ray);
             if (intersectionPoint != null) {
                 double distanceToIntersectionSquared =
@@ -200,7 +248,7 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
 
         for (int x = 0; x < canvas.getWidth(); ++x) {
             for (int y = 0; y < canvas.getHeight(); ++y) {
-                if (x == 0 && y == 251) {
+                if (x == 355 && y == 368) {
                     int a = 1;
                 }
                 Ray ray = camera.getRayForPixel(x, y);

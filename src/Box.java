@@ -15,11 +15,11 @@ public class Box {
         Point3D bottomLeftBack = bottomLeftFront.add(topLeftBack.subtract(topLeftFront));
 
         front = new RectFace(topLeftFront, topRightFront, bottomLeftFront);
-        back = new RectFace(topLeftBack, topRightBack, bottomLeftBack);
+        back = new RectFace(topRightBack, topLeftBack, bottomRightBack);
         left = new RectFace(topLeftBack, topLeftFront, bottomLeftBack);
         right = new RectFace(topRightFront, topRightBack, bottomRightFront);
         top = new RectFace(topLeftBack, topRightBack, topLeftFront);
-        bottom = new RectFace(bottomRightFront, bottomLeftFront, bottomRightBack);
+        bottom = new RectFace(bottomLeftFront, bottomRightFront, bottomLeftBack);
     }
 
     public RectFace[] getFaceList() {

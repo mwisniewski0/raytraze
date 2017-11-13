@@ -46,4 +46,8 @@ public class Ray {
     public Point3D getPointAtDistance(double dFromRayStart) {
         return origin.add(unitDirection.multiply(dFromRayStart));
     }
+
+    public Ray getShifted(double shift) {
+        return new Ray(getPointAtDistance(shift), unitDirection);
+    }
 }

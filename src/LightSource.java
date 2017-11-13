@@ -18,4 +18,8 @@ public class LightSource {
         this.intensity = intensity;
         this.shape = shape;
     }
+
+    public RectFace getShape() {
+        return shape;
+    }
 }
