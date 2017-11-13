@@ -3,6 +3,7 @@ import javafx.geometry.Point3D;
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
+import java.util.Random;
 
 public class GeometryHelpers {
     /** Rotates a point about another point by a given angle
@@ -167,5 +168,14 @@ public class GeometryHelpers {
 
         Point3D refracted = incidence.multiply(r).add(normal.multiply(r*c - Math.sqrt(1 - r*r*(1-c*c))));
         return refracted.normalize();
+    }
+
+    /*
+    * Randomizes three compoonents for a vector and returns it.*/
+    public static Point3D randVector()
+    {
+        Random rand = new Random();
+        Point3D randVector = new Point3D(rand.nextDouble(),rand.nextDouble(),rand.nextDouble());
+        return randVector;
     }
 }
