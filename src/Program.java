@@ -9,10 +9,13 @@ public class Program {
         // Closing any of the windows results in the program terminating.
         JFrame displayFrame = new JFrame();
 
-        displayFrame.add(new Scene());
+        Scene scene = new Scene();
+        displayFrame.add(scene);
         displayFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         displayFrame.pack();
         displayFrame.setVisible(true);
+
+//        scene.makePrettyStuff();
     }
 }
