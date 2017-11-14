@@ -381,25 +381,25 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
         fpsCount += 1;
 
         // We will calculate the color for each pixel separately
-//        IntStream.range(0,canvas.getWidth()).parallel().forEach(x->{
-//            for (int y = 0; y < canvas.getHeight(); ++y) {
-//                Ray ray = camera.getRayForPixel(x, y);
-//                LightIntensity intensity = traceRay(ray, 0);
-//                Color pixelColor = intensity.translateToRGB(1.0 / exposure);
-//                canvas.setRGB(x, y, pixelColor.getRGB());
-//            }
-//            System.out.println(x);
-//        });
-
-        for (int x = 0; x < canvas.getWidth(); ++x) {
-            System.out.println(x);
+        IntStream.range(0,canvas.getWidth()).parallel().forEach(x->{
             for (int y = 0; y < canvas.getHeight(); ++y) {
                 Ray ray = camera.getRayForPixel(x, y);
                 LightIntensity intensity = traceRay(ray, 0);
                 Color pixelColor = intensity.translateToRGB(1.0 / exposure);
                 canvas.setRGB(x, y, pixelColor.getRGB());
             }
-        }
+            System.out.println(x);
+        });
+
+//        for (int x = 0; x < canvas.getWidth(); ++x) {
+//            System.out.println(x);
+//            for (int y = 0; y < canvas.getHeight(); ++y) {
+//                Ray ray = camera.getRayForPixel(x, y);
+//                LightIntensity intensity = traceRay(ray, 0);
+//                Color pixelColor = intensity.translateToRGB(1.0 / exposure);
+//                canvas.setRGB(x, y, pixelColor.getRGB());
+//            }
+//        }
 
         if (fpsCount % 60 == 0) {
             long newTime = System.nanoTime();
