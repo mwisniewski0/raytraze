@@ -2,10 +2,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
-
+/**
+ * The main class of the program which and displays the scene.
+ */
 public class Program {
     public static void main(String[] args) {
-        // We need two windows - one for the scene and one for the GUI. otherwise it's very messy.
         // Closing any of the windows results in the program terminating.
         JFrame displayFrame = new JFrame();
 

@@ -1,11 +1,14 @@
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Point3D;
 import javafx.scene.effect.Light;
-
 import java.awt.*;
 
 /**
- * A simple sphere described by its center, radius and material.
+ * The Sphere Class implements a generic implementation of any spherical object that is to be positioned in our scene,
+ * following our Shape3D interface. The definition of a sphere was mathematically simpler than other objects, however
+ * slightly more complex when interacting with rays of light in order to obtain interception points. The SphereSolid
+ * class which inherits from the Solid class allows us to have different type of spheres to model more shading behaviors.
+ * @author Pietro
  */
 public class Sphere implements Shape3D{
     public Point3D center;
@@ -60,6 +63,8 @@ public class Sphere implements Shape3D{
 //    }
 
     /**
+     * A simple intersection algorithm which utilizes the mathematical definition of a Sphere
+     * and utilizes determinant and its diameter to determine the direction that the ray casted came from.
      * @param ray: The ray that interacts with this particular sphere.
      * @return IntersectionPoint between the Sphere and the Ray projected
      */
@@ -97,6 +102,7 @@ public class Sphere implements Shape3D{
     }
 
     /**
+     * Obtains the normal for any particular pixel contained by this Sphere.
      * @param pointInShape Point on the sphere
      * @return point3D, The normal to the sphere at the given point
      */

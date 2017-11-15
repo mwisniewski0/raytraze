@@ -18,7 +18,7 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
     private static final double AIR_REFRACTION_INDEX = 1.0;
     private static int LIGHT_SAMPLES_PER_LIGHT = 1;
     private static final int MAX_TRACE_DEPTH = 3;
-    private static final int MONTE_CARLO_SAMPLES = 400;
+    private static final int MONTE_CARLO_SAMPLES = 0;
     private int width = 400, height = 300;
 
     private final double ROTATION_STEP = 0.1;
@@ -147,43 +147,43 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
         solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-5, -3, -5), 2.5), glass));
         solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(5, -3, -5), 2.5), new Material()));
 
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(0,-9,0), 1), reflective));
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-2,-9,0), 1), glass));
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-4,-9,0), 1), reflective));
-//
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(0,-9,2), 1), glass));
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-2,-9,2), 1), reflective));
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-4,-9,2), 1), glass));
-//
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(0,-9,4), 1), reflective));
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-2,-9,4), 1), glass));
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-4,-9,4), 1), reflective));
-//
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(0,-6,0), 1), glass));
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-2,-6,0), 1), reflective));
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-4,-6,0), 1), glass));
-//
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(0,-6,2), 1), reflective));
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-2,-6,2), 1), glass));
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-4,-6,2), 1), reflective));
-//
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(0,-6,4), 1), glass));
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-2,-6,4), 1), reflective));
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-4,-6,4), 1), glass));
-//
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(0,-3,0), 1), reflective));
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-2,-3,0), 1), glass));
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-4,-3,0), 1), reflective));
-//
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(0,-3,2), 1), glass));
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-2,-3,2), 1), reflective));
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-4,-3,2), 1), glass));
-//
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(0,-3,4), 1), reflective));
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-2,-3,4), 1), glass));
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-4,-3,4), 1), reflective));
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(0,-9,0), 1), reflective));
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-2,-9,0), 1), glass));
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-4,-9,0), 1), reflective));
 
-//        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-4.3,0,-0.2), 1), glass));
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(0,-9,2), 1), glass));
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-2,-9,2), 1), reflective));
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-4,-9,2), 1), glass));
+
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(0,-9,4), 1), reflective));
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-2,-9,4), 1), glass));
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-4,-9,4), 1), reflective));
+
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(0,-6,0), 1), glass));
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-2,-6,0), 1), reflective));
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-4,-6,0), 1), glass));
+
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(0,-6,2), 1), reflective));
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-2,-6,2), 1), glass));
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-4,-6,2), 1), reflective));
+
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(0,-6,4), 1), glass));
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-2,-6,4), 1), reflective));
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-4,-6,4), 1), glass));
+
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(0,-3,0), 1), reflective));
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-2,-3,0), 1), glass));
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-4,-3,0), 1), reflective));
+
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(0,-3,2), 1), glass));
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-2,-3,2), 1), reflective));
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-4,-3,2), 1), glass));
+
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(0,-3,4), 1), reflective));
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-2,-3,4), 1), glass));
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-4,-3,4), 1), reflective));
+
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-4.3,0,-0.2), 1), glass));
 
         Box boundingBox = new Box(
                 new Point3D(-10,10, 10),
@@ -216,11 +216,11 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
         bottomWallMaterial.diffuseReflectivity = new LightIntensity(.7,.7, .7);
 //        bottomWallMaterial.directReflectivity = LightIntensity.makeUniformRGB(.3);
 
-        try {
-            bottomWallMaterial.texture = ImageIO.read(new File("C:\\Class_work\\checkerboard.png"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            bottomWallMaterial.texture = ImageIO.read(new File("C:\\Class_work\\checkerboard.png"));
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
 
         solids.add(new RectFace.FaceSolid(boundingBox.left, leftWallMaterial));
         solids.add(new RectFace.FaceSolid(boundingBox.right, rightWallMaterial));
