@@ -350,8 +350,16 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
         return result;
     }
 
-    // Computes the LightIntensity at a given point on a solid, stemming from indirect light - light reflected from
-    // other objects
+
+    /**
+     * Computes the LightIntensity at a given point on a solid, stemming from indirect light - light reflected from
+     * other objects. Given our images with high Monte Carlo Sampling didn't render we couldn't fully test the function.
+     * However, it seemed to be doing what it was supposed to do, and it would be more viable had we had access to
+     * more powerful computing power (I attempted using the Library's VR computer).
+     * @param intersection The ray-shape intersection for any encountered shape.
+     * @param currentTraceDepth The depth of the tracing deptb
+     * @return Indirect Diffuse Light component, utilizing Montecarlo's model.
+     */
     // @author Pietro
     private LightIntensity computeIndirectDiffuse(Solid.Intersection intersection, int currentTraceDepth) {
         if (MONTE_CARLO_SAMPLES == 0) {
@@ -363,21 +371,25 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
 
         //Utilizes Monte Carlo approach
         for(int MCSample = 0; MCSample < MONTE_CARLO_SAMPLES; ++MCSample) {
+            //generate a random vector
             Point3D randomVector = GeometryHelpers.randVector().normalize();
+            //Make a new ray given the intersection point
             Ray ray = new Ray(intersection.info.pointOfIntersection, randomVector);
-
+            //Obtain the dot product from the new indirect vector
             double rayDotNormal = randomVector.dotProduct(intersection.info.getNormal());
             if (rayDotNormal <= 0) {
-                // Retry
+                // Retry if it did not hit anything, avoiding null pointer exception.
                 MCSample -= 1;
                 continue;
             }
+            //Weight the ray down or up depending on its perpendicular proximity to light source
             totalWeight += rayDotNormal;
             LightIntensity intensity = traceRay(ray, currentTraceDepth);
             intensity = intensity.multiply(rayDotNormal).multiply(intersection.intersectedSolid.getDiffuseReflectivityAtPoint(intersection.info.pointOfIntersection));
-
+            //Average the results of each indirect light source
             averageResult = averageResult.add(intensity);
         }
+        //Integrate/take the average of the results with consideration to its weight.
         return averageResult.multiply(1.0/totalWeight);
     }
 

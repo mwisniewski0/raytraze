@@ -180,7 +180,8 @@ public class GeometryHelpers {
 
 
     /*
-    * Randomizes three components for a vector and returns it.*/
+    * Randomizes three components for a vector and returns it to emulate random light rays in indirect diffuse.
+    * */
     public static Point3D randVector() {
         Point3D randVector = new Point3D(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5);
         return randVector;
