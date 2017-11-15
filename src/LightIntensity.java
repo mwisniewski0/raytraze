@@ -53,6 +53,9 @@ public class LightIntensity {
         return rgbComponent;
     }
 
+    /**
+     * Returns this light intensity multiplied by a scalar factor
+     */
     public LightIntensity multiply(double factor) {
         LightIntensity result = new LightIntensity();
         result.red = red * factor;
@@ -61,6 +64,9 @@ public class LightIntensity {
         return result;
     }
 
+    /**
+     * Returns this light intensity with another intensity added
+     */
     public LightIntensity add(LightIntensity other) {
         LightIntensity result = new LightIntensity();
         result.red = red + other.red;
@@ -69,17 +75,26 @@ public class LightIntensity {
         return result;
     }
 
+    /**
+     * Makes a new LightIntensity with no
+     */
     static public LightIntensity makeZero() {
         LightIntensity result = new LightIntensity();
         result.red = result.green = result.blue = 0;
         return result;
     }
 
+    /**
+     * Checks whether this LightIntensity is zero
+     */
     public boolean isZero() {
         double epsilon = 0.000001;
         return red + green + blue < epsilon;
     }
 
+    /**
+     * Returns this LightIntensity with its components multiplied by the respective components of another LightIntensity
+     */
     public LightIntensity multiply(LightIntensity other) {
         LightIntensity result = new LightIntensity();
         result.red = red * other.red;
@@ -88,6 +103,9 @@ public class LightIntensity {
         return result;
     }
 
+    /**
+     * Creates a LightIntensity with equal components.
+     */
     public static LightIntensity makeUniformRGB(double componentValue) {
         return new LightIntensity(componentValue, componentValue, componentValue);
     }

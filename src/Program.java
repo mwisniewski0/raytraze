@@ -16,7 +16,5 @@ public class Program {
 
         displayFrame.pack();
         displayFrame.setVisible(true);
-
-//        scene.makePrettyStuff();
     }
 }

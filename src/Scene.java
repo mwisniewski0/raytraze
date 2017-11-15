@@ -14,25 +14,30 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.stream.IntStream;
 
+/**
+ * The Scene class is responsible for generating the images and tracing the rays
+ */
 public class Scene extends JPanel implements KeyListener, ComponentListener {
+    // Constants
     private static final double AIR_REFRACTION_INDEX = 1.0;
-    private static int LIGHT_SAMPLES_PER_LIGHT = 1;
+    private static int LIGHT_SAMPLES_PER_LIGHT = 30;
     private static final int MAX_TRACE_DEPTH = 3;
     private static final int MONTE_CARLO_SAMPLES = 0;
+    private static final double MINIMUM_RAY_LENGTH = 0.0001;
     private int width = 400, height = 300;
 
     private final double ROTATION_STEP = 0.1;
     private final double CAMERA_MOVE_STEP = 0.5;
 
+    // Configuration of the scene
     BufferedImage canvas;
-
-    private static final double MINIMUM_RAY_LENGTH = 0.0001;
     Camera camera;
     ArrayList<Solid> solids = new ArrayList<>();
     ArrayList<LightSource> lightSources = new ArrayList<>();
     private double exposure;
     private LightIntensity ambientLight;
 
+    // For any point on a surface of a solid, computes the direct illumination from light sources
     private LightIntensity computeDirectDiffuse(Solid.Intersection intersection) {
         Point3D target = intersection.info.pointOfIntersection;
         LightIntensity result = LightIntensity.makeZero();
@@ -72,27 +77,19 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
         this.setBackground(Color.BLACK);
         this.setPreferredSize(new Dimension(width, height));
         this.setFocusable(true);
-        setUpScene();
+
+        // We did not have enough time to create editors for the scene, we decided to have a few initializer methods
+        // instead
+        setUp2SpheresScene();
+
         recreateCanvas();
         this.addKeyListener(this);
         this.addComponentListener(this);
         this.setUpTimer();
     }
 
-    public void makePrettyStuff() {
-        LIGHT_SAMPLES_PER_LIGHT = 100;
-        for (int i = 0; i < 30; ++i) {
-            camera.moveBackward(.1);
-            render(canvas);
-            try {
-                ImageIO.write(canvas, "png", new File("C:\\class_work\\" + new Integer(i).toString() +".png"));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    private void setUpScene() {
+    // Sets up the scene with 9 stacked spheres
+    private void setUp9SpheresScene() {
         camera = new Camera(
                 new Point3D(0, 0, 9),
                 new Point3D(0,0,0),
@@ -111,28 +108,17 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
                 new LightSource(
                         new LightIntensity(.7,  .7, .7),
                         new RectFace(
-                                new Point3D(-.1, 9.99, -5.0),
-                                new Point3D(.1,  9.99, -5.0),
-                                new Point3D(-.1, 9.99, -5.1)
+                                new Point3D(-1.1, 9.99, -5.0),
+                                new Point3D(1.1,  9.99, -5.0),
+                                new Point3D(-1.1, 9.99, -6.0)
                         )
                 ));
-
-//        lightSources.add(
-//                new LightSource(
-//                        new LightIntensity(1.2, 1.2, 1.2),
-//                        new RectFace(
-//                                new Point3D(-3.1, 2.99, -5.0),
-//                                new Point3D(-2.9,  2.99, -5.0),
-//                                new Point3D(-3.1, 2.99, -5.1)
-//                        )
-//                ));
 
         Material reflective = new Material();
         reflective.diffuseReflectivity.red = 0.2;
         reflective.diffuseReflectivity.green = 0.2;
         reflective.diffuseReflectivity.blue  = 0.2;
         reflective.directReflectivity = LightIntensity.makeUniformRGB(0.5);
-
 
         Material glass = new Material();
         glass.diffuseReflectivity.red = 0.0;
@@ -143,9 +129,6 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
         glass.passthroughIntensity.blue =  0.9;
         glass.directReflectivity = LightIntensity.makeUniformRGB(0.1);
         glass.refractionIndex = 1.33;
-
-        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-5, -3, -5), 2.5), glass));
-        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(5, -3, -5), 2.5), new Material()));
 
         solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(0,-9,0), 1), reflective));
         solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-2,-9,0), 1), glass));
@@ -183,7 +166,105 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
         solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-2,-3,4), 1), glass));
         solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-4,-3,4), 1), reflective));
 
-        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-4.3,0,-0.2), 1), glass));
+        Box boundingBox = new Box(
+                new Point3D(-10,10, 10),
+                new Point3D(-10,10, -10),
+                new Point3D(10,10, 10),
+                new Point3D(-10,-10, 10)
+        );
+
+        Material leftWallMaterial = new Material();
+        leftWallMaterial.diffuseReflectivity = new LightIntensity(.7,.7, 0.3);
+        leftWallMaterial.directReflectivity = LightIntensity.makeUniformRGB(.3);
+
+        Material rightWallMaterial = new Material();
+        rightWallMaterial.diffuseReflectivity = new LightIntensity(.7,0.3, .7);
+        rightWallMaterial.directReflectivity = LightIntensity.makeUniformRGB(.3);
+
+        Material frontWallMaterial = new Material();
+        frontWallMaterial.diffuseReflectivity = new LightIntensity(0.3,0.3, 0.3);
+        frontWallMaterial.directReflectivity = LightIntensity.makeUniformRGB(.3);
+
+        Material backWallMaterial = new Material();
+        backWallMaterial.diffuseReflectivity = new LightIntensity(.7,0.3, 0.3);
+        backWallMaterial.directReflectivity = LightIntensity.makeUniformRGB(.3);
+
+        Material topWallMaterial = new Material();
+        topWallMaterial.diffuseReflectivity = new LightIntensity(.7,.7, .7);
+        topWallMaterial.directReflectivity = LightIntensity.makeUniformRGB(.3);
+
+        Material bottomWallMaterial = new Material();
+        bottomWallMaterial.diffuseReflectivity = new LightIntensity(.7,.7, .7);
+        bottomWallMaterial.directReflectivity = LightIntensity.makeUniformRGB(.3);
+
+        try {
+            bottomWallMaterial.texture = ImageIO.read(new File("C:\\Class_work\\checkerboard.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        solids.add(new RectFace.FaceSolid(boundingBox.left, leftWallMaterial));
+        solids.add(new RectFace.FaceSolid(boundingBox.right, rightWallMaterial));
+        solids.add(new RectFace.FaceSolid(boundingBox.front, frontWallMaterial));
+        solids.add(new RectFace.FaceSolid(boundingBox.back, backWallMaterial));
+        solids.add(new RectFace.FaceSolid(boundingBox.top, topWallMaterial));
+        solids.add(new RectFace.FaceSolid(boundingBox.bottom, bottomWallMaterial));
+    }
+
+    // Sets up the scene with one refractive and one normal sphere
+    private void setUp2SpheresScene() {
+        camera = new Camera(
+                new Point3D(0, 0, 9),
+                new Point3D(0,0,0),
+                new Point3D(0,1,0),
+                Math.PI * 0.5, width, height
+        );
+        camera.moveForward(1.0);
+
+        exposure = 1.0;
+        ambientLight = new LightIntensity();
+        ambientLight.red =   0.2;
+        ambientLight.green = 0.2;
+        ambientLight.blue =  0.2;
+
+        lightSources.add(
+                new LightSource(
+                        new LightIntensity(.7,  .7, .3),
+                        new RectFace(
+                                new Point3D(-1.1, 9.99, -5.0),
+                                new Point3D(1.1,  9.99, -5.0),
+                                new Point3D(-1.1, 9.99, -6.1)
+                        )
+                ));
+
+        lightSources.add(
+                new LightSource(
+                        new LightIntensity(.4, .3, .7),
+                        new RectFace(
+                                new Point3D(-4.1, 2.99, -5.0),
+                                new Point3D(-2.9,  2.99, -5.0),
+                                new Point3D(-4.1, 2.99, -6.1)
+                        )
+                ));
+
+        Material reflective = new Material();
+        reflective.diffuseReflectivity.red = 0.2;
+        reflective.diffuseReflectivity.green = 0.2;
+        reflective.diffuseReflectivity.blue  = 0.2;
+        reflective.directReflectivity = LightIntensity.makeUniformRGB(0.5);
+
+        Material glass = new Material();
+        glass.diffuseReflectivity.red = 0.0;
+        glass.diffuseReflectivity.green = 0.0;
+        glass.diffuseReflectivity.blue = 0.0;
+        glass.passthroughIntensity.red =   0.9;
+        glass.passthroughIntensity.green = 0.9;
+        glass.passthroughIntensity.blue =  0.9;
+        glass.directReflectivity = LightIntensity.makeUniformRGB(0.1);
+        glass.refractionIndex = 1.33;
+
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(-5, -3, -5), 2.5), glass));
+        solids.add(new Sphere.SphereSolid(new Sphere(new Point3D(5, -3, -5), 2.5), new Material()));
 
         Box boundingBox = new Box(
                 new Point3D(-10,10, 10),
@@ -194,33 +275,27 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
 
         Material leftWallMaterial = new Material();
         leftWallMaterial.diffuseReflectivity = new LightIntensity(.7,.7, 0.3);
-//        leftWallMaterial.directReflectivity = LightIntensity.makeUniformRGB(.3);
 
         Material rightWallMaterial = new Material();
         rightWallMaterial.diffuseReflectivity = new LightIntensity(.7,0.3, .7);
-//        rightWallMaterial.directReflectivity = LightIntensity.makeUniformRGB(.3);
 
         Material frontWallMaterial = new Material();
         frontWallMaterial.diffuseReflectivity = new LightIntensity(0.3,0.3, 0.3);
-//        frontWallMaterial.directReflectivity = LightIntensity.makeUniformRGB(.3);
 
         Material backWallMaterial = new Material();
         backWallMaterial.diffuseReflectivity = new LightIntensity(.7,0.3, 0.3);
-//        backWallMaterial.directReflectivity = LightIntensity.makeUniformRGB(.3);
 
         Material topWallMaterial = new Material();
         topWallMaterial.diffuseReflectivity = new LightIntensity(.7,.7, .7);
-//        topWallMaterial.directReflectivity = LightIntensity.makeUniformRGB(.3);
 
         Material bottomWallMaterial = new Material();
         bottomWallMaterial.diffuseReflectivity = new LightIntensity(.7,.7, .7);
-//        bottomWallMaterial.directReflectivity = LightIntensity.makeUniformRGB(.3);
 
-//        try {
-//            bottomWallMaterial.texture = ImageIO.read(new File("C:\\Class_work\\checkerboard.png"));
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
+        try {
+            bottomWallMaterial.texture = ImageIO.read(new File("C:\\Class_work\\checkerboard.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         solids.add(new RectFace.FaceSolid(boundingBox.left, leftWallMaterial));
         solids.add(new RectFace.FaceSolid(boundingBox.right, rightWallMaterial));
@@ -228,16 +303,10 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
         solids.add(new RectFace.FaceSolid(boundingBox.back, backWallMaterial));
         solids.add(new RectFace.FaceSolid(boundingBox.top, topWallMaterial));
         solids.add(new RectFace.FaceSolid(boundingBox.bottom, bottomWallMaterial));
-
-        RectFace divider = new RectFace(
-                new Point3D(-10, 0, 0),
-                new Point3D(10, 0, 0),
-                new Point3D(-10, 10, 0)
-        );
-//        solids.add(new RectFace.FaceSolid(divider, bottomWallMaterial));
     }
 
-    public LightIntensity traceRay(Ray ray, int currentTraceDepth) {
+    // Back-traces a given ray through the scene to get its light intensity
+    private LightIntensity traceRay(Ray ray, int currentTraceDepth) {
         if (currentTraceDepth > MAX_TRACE_DEPTH) {
             return LightIntensity.makeZero();
         }
@@ -251,13 +320,13 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
         if (solidIntersection == null && lightIntersection == null) {
             // Nothing to do
         } else if (solidIntersection == null && lightIntersection != null) {
-            result = result.add(lightSources.get(0).intensity);
+            result = result.add(lightIntersection.intersectedLight.intensity);
         } else if (solidIntersection != null & lightIntersection == null) {
             result = handleSolidRayHit(ray, solidIntersection, result, currentTraceDepth);
         } else if (solidIntersection.info.pointOfIntersection.distance(ray.origin) < lightIntersection.info.pointOfIntersection.distance(ray.origin)) {
             result = handleSolidRayHit(ray, solidIntersection, result, currentTraceDepth);
         } else {
-            result = result.add(lightSources.get(0).intensity);
+            result = result.add(lightIntersection.intersectedLight.intensity);
         }
 
         return result;
@@ -279,6 +348,9 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
         return result;
     }
 
+    // Computes the LightIntensity at a given point on a solid, stemming from indirect light - light reflected from
+    // other objects
+    // @author Pietro
     private LightIntensity computeIndirectDiffuse(Solid.Intersection intersection, int currentTraceDepth) {
         if (MONTE_CARLO_SAMPLES == 0) {
             return LightIntensity.makeZero();
@@ -292,7 +364,7 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
             Point3D randomVector = GeometryHelpers.randVector().normalize();
             Ray ray = new Ray(intersection.info.pointOfIntersection, randomVector);
 
-            double rayDotNormal = randomVector.dotProduct(intersection.info.getNormal()) * -1;
+            double rayDotNormal = randomVector.dotProduct(intersection.info.getNormal());
             if (rayDotNormal <= 0) {
                 // Retry
                 MCSample -= 1;
@@ -307,7 +379,7 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
         return averageResult.multiply(1.0/totalWeight);
     }
 
-    private LightIntensity handleReflectedRay(Ray ray, IntersectionPoint shapeIntersection, int currentTraceDepth) {
+    private LightIntensity handleReflectedRay(Ray ray, IntersectionData shapeIntersection, int currentTraceDepth) {
         Point3D reflectedRayDir = GeometryHelpers.reflect(ray.unitDirection, shapeIntersection.getNormal());
         Ray reflectedRay = new Ray(shapeIntersection.pointOfIntersection, reflectedRayDir);
         return traceRay(reflectedRay, currentTraceDepth);
@@ -328,7 +400,9 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
         return traceRay(refractedRay, currentTraceDepth);
     }
 
+    // Casts a ray through the scene and finds the closest solid
     private Solid.Intersection castRayOnSolids(Ray ray) {
+        // We need to shift the ray to avoid shadow acne
         ray = ray.getShifted(MINIMUM_RAY_LENGTH);
 
         double closestPointDistanceSquared = Double.POSITIVE_INFINITY;
@@ -351,6 +425,7 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
         return closestIntersection;
     }
 
+    // Casts a ray through the scene and returns the closest light source
     private LightSource.Intersection castRayOnLights(Ray ray) {
         double closestPointDistanceSquared = Double.POSITIVE_INFINITY;
         LightSource.Intersection closestIntersection = null;
@@ -372,15 +447,10 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
         return closestIntersection;
     }
 
-    int fpsCount = 0;
-    Long initialTime = null;
+    /**
+     * Renders the scene to the provided BufferedImage
+     */
     public void render(BufferedImage canvas) {
-        if (initialTime == null) {
-            initialTime = System.nanoTime();
-        }
-        fpsCount += 1;
-
-        // We will calculate the color for each pixel separately
         IntStream.range(0,canvas.getWidth()).parallel().forEach(x->{
             for (int y = 0; y < canvas.getHeight(); ++y) {
                 Ray ray = camera.getRayForPixel(x, y);
@@ -388,24 +458,7 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
                 Color pixelColor = intensity.translateToRGB(1.0 / exposure);
                 canvas.setRGB(x, y, pixelColor.getRGB());
             }
-            System.out.println(x);
         });
-
-//        for (int x = 0; x < canvas.getWidth(); ++x) {
-//            System.out.println(x);
-//            for (int y = 0; y < canvas.getHeight(); ++y) {
-//                Ray ray = camera.getRayForPixel(x, y);
-//                LightIntensity intensity = traceRay(ray, 0);
-//                Color pixelColor = intensity.translateToRGB(1.0 / exposure);
-//                canvas.setRGB(x, y, pixelColor.getRGB());
-//            }
-//        }
-
-        if (fpsCount % 60 == 0) {
-            long newTime = System.nanoTime();
-            System.out.println((double)(newTime - initialTime) / 1000000.0);
-            initialTime = newTime;
-        }
     }
 
     @Override
@@ -414,6 +467,8 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
         render(canvas);
         g.drawImage(canvas,0, canvas.getHeight(), canvas.getWidth(), -canvas.getHeight(), null);
     }
+
+    // The methods below are responsible for moving throughout the scene
 
     @Override
     public void keyTyped(KeyEvent e) {}

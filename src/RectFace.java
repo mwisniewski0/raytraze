@@ -72,10 +72,10 @@ public class RectFace implements Shape3D {
      * castRay is a method that will emulate the casting a light ray onto this particular rectangular face and calculate
      * the Intersection Point if the ray intercepts with the object and a boolean depending on the side the ray came from.
      * @param ray A ray object that is defined given a point of origin and a unit direction vector.
-     * @return IntersectionPoint data type specified in the Shape3D interface.
+     * @return IntersectionData data type specified in the Shape3D interface.
      */
     @Override
-    public IntersectionPoint castRay(Ray ray) {
+    public IntersectionData castRay(Ray ray) {
         double t = (topLeft.dotProduct(normal) - ray.origin.dotProduct(normal))/ray.unitDirection.dotProduct(normal);
         if (t < 0) {
             return null;
@@ -88,7 +88,7 @@ public class RectFace implements Shape3D {
         }
 
         boolean hitFromInside = normal.dotProduct(ray.unitDirection) < 0;
-        return new IntersectionPoint(pointOfIntersection, hitFromInside, this);
+        return new IntersectionData(pointOfIntersection, hitFromInside, this);
     }
 
     /**

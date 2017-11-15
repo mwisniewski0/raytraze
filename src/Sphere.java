@@ -1,16 +1,11 @@
-import javafx.beans.binding.Bindings;
 import javafx.geometry.Point3D;
-import javafx.scene.effect.Light;
+
 import java.awt.*;
 
 /**
- * The Sphere Class implements a generic implementation of any spherical object that is to be positioned in our scene,
- * following our Shape3D interface. The definition of a sphere was mathematically simpler than other objects, however
- * slightly more complex when interacting with rays of light in order to obtain interception points. The SphereSolid
- * class which inherits from the Solid class allows us to have different type of spheres to model more shading behaviors.
- * @author Pietro
+ * Represents a simple sphere that can be displayed in the scene class.
  */
-public class Sphere implements Shape3D{
+public class Sphere implements Shape3D {
     public Point3D center;
     public double radius;
 
@@ -33,48 +28,13 @@ public class Sphere implements Shape3D{
         return p.subtract(center).multiply(1.0/radius);
     }
 
-//    private LightIntensity computeTextureDiffuseReflectivity(Point3D viewedPoint) {
-//        Point3D centeredPoint = viewedPoint.subtract(center);
-//
-//        // Converting from equirectangular sphere projection
-//        double lat = 0.5 * (centeredPoint.getY() / radius + 1) * Math.PI;
-//        double lon = Math.atan(centeredPoint.getX()/centeredPoint.getZ()) + Math.PI * 0.5;
-//
-//        int pixelY = material.texture.getHeight() - (int) Math.floor(lat / Math.PI * material.texture.getHeight());
-//        int pixelX = (int) Math.floor(lon / (Math.PI) * material.texture.getWidth());
-//
-//        // The floating point arithmetic may cause an off by one error. That is fine, apart from if we were
-//        // going to go out of bounds of our texture:
-//        if (pixelX < 0) {
-//            pixelX = 0;
-//        } else if (pixelX >= material.texture.getWidth()) {
-//            pixelX = material.texture.getWidth() - 1;
-//        }
-//        if (pixelY < 0) {
-//            pixelY = 0;
-//        } else if (pixelY >= material.texture.getHeight()) {
-//            pixelY = material.texture.getHeight() - 1;
-//        }
-//
-//        Color pixel = new Color(material.texture.getRGB(pixelX, pixelY));
-//        LightIntensity result = new LightIntensity();
-//        result.setColor(pixel);
-//        return result;
-//    }
-
-    /**
-     * A simple intersection algorithm which utilizes the mathematical definition of a Sphere
-     * and utilizes determinant and its diameter to determine the direction that the ray casted came from.
-     * @param ray: The ray that interacts with this particular sphere.
-     * @return IntersectionPoint between the Sphere and the Ray projected
-     */
     @Override
-    public IntersectionPoint castRay(Ray ray) {
+    public IntersectionData castRay(Ray ray) {
 
         Point3D co = ray.origin.subtract(center);
         double b = 2 * (co.dotProduct(ray.unitDirection));
         double c = co.dotProduct(co) - radius*radius;
-        double delta = b*b - 4*c; // Since a is 1 (unitDirection dot unitDirection0
+        double delta = b*b - 4*c; // Since a is 1 (unitDirection dot unitDirection)
 
         if (delta < 0) return null;
 
@@ -97,7 +57,7 @@ public class Sphere implements Shape3D{
             // Take the closer point of intersection
             dFromRayStart = negT;
         }
-        IntersectionPoint pointOfIntersection = new IntersectionPoint(ray.getPointAtDistance(dFromRayStart), collidedInside, this);
+        IntersectionData pointOfIntersection = new IntersectionData(ray.getPointAtDistance(dFromRayStart), collidedInside, this);
         return pointOfIntersection;
     }
 

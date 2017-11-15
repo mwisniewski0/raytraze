@@ -159,6 +159,14 @@ public class GeometryHelpers {
         return v.dotProduct(v);
     }
 
+    /**
+     * Refract's a ray according to snell's law
+     * @param incidence The direction of the incidence ray
+     * @param normal The normal of the refracting surface
+     * @param fromIndex Refractive index of the material from which we are transferring
+     * @param toIndex Refractive index of the material to which we are transferring
+     * @return
+     */
     public static Point3D refract(Point3D incidence, Point3D normal, double fromIndex, double toIndex) {
         // Snell's law: sin(a1)/sin(a2) = index2/index1
         // Thanks to a dude on SO: https://stackoverflow.com/a/29758766
@@ -172,12 +180,18 @@ public class GeometryHelpers {
 
 
     /*
-    * Randomizes three compoonents for a vector and returns it.*/
+    * Randomizes three components for a vector and returns it.*/
     public static Point3D randVector() {
         Point3D randVector = new Point3D(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5);
         return randVector;
     }
 
+    /**
+     * Reflects the given vector through the given normal
+     * @param incidence The direction of the incidence ray
+     * @param normal The normal of the reflecting surface
+     * @return The reflected vector
+     */
     public static Point3D reflect(Point3D incidence, Point3D normal) {
         return incidence.subtract(
                 incidence.subtract(GeometryHelpers.projectVectorOntoVector(incidence, normal)).multiply(2))
