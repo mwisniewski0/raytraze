@@ -46,6 +46,8 @@ public class Scene extends JPanel implements KeyListener, ComponentListener {
         for (LightSource light : lightSources) {
             LightIntensity intensityFromThisLight = LightIntensity.makeZero();
 
+            // Run multiple random rays towards the light source, and see which ones hit the light source, and which
+            // don't. The result will be averaged to achieve smooth shadows
             for (int i = 0; i < LIGHT_SAMPLES_PER_LIGHT; ++i) {
                 Point3D lightSamplePos = light.getRandomPoint();
                 Point3D vectorToLight = lightSamplePos.subtract(target);
